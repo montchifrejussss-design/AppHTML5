@@ -1,0 +1,6 @@
+{
+  "name": "Sémantique HTML5 de A à Z",
+  "description": "Une application complète et interactive pour maîtriser les balises sémantiques HTML5, leurs bonnes pratiques, les erreurs à éviter, avec un auditeur de code intelligent propulsé par l'IA.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
