@@ -31,15 +31,20 @@ import {
   History,
   Star,
   Languages,
-  ChevronDown
+  ChevronDown,
+  Lightbulb,
+  ArrowUpRight
 } from "lucide-react";
-import { SEMANTIC_TAGS, COMMON_ERRORS, INITIAL_AUDIT_TEMPLATES, INITIAL_GAME_BLOCKS, GAME_OPTIONS } from "./data";
+import { SEMANTIC_TAGS, COMMON_ERRORS, INITIAL_AUDIT_TEMPLATES, INITIAL_GAME_BLOCKS, GAME_OPTIONS, GAME_DATA_BY_LANG, COMMON_ERRORS_BY_LANG, AUDIT_TEMPLATES_BY_LANG } from "./data";
+import { CSS_PROPERTIES, JS_CONCEPTS, PYTHON_CONCEPTS, PHP_CONCEPTS } from "./cssData";
 import { AuditResult, GameBlock, SemanticTag } from "./types";
+import { getConcreteUseCases } from "./utils/useCases";
 import developerLogo from "./assets/images/developer_logo_1780612371108.png";
 import { playSound, getMuted, setMuted } from "./utils/audio";
 import { getAllTags, saveTag, deleteTag, initDB } from "./utils/indexedDb";
 import AdvancedChallenges from "./components/AdvancedChallenges";
 import SemanticChatbot from "./components/SemanticChatbot";
+import CssPlayground from "./components/CssPlayground";
 
 function DeveloperLogo({ className = "w-8 h-8" }: { className?: string }) {
   return (
@@ -98,7 +103,38 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [expandedTag, setExpandedTag] = useState<string | null>("<main>");
+
+  const activeLanguageTags = (() => {
+    switch (selectedLanguage) {
+      case "CSS":
+        return CSS_PROPERTIES;
+      case "JavaScript":
+        return JS_CONCEPTS;
+      case "Python":
+        return PYTHON_CONCEPTS;
+      case "PHP":
+        return PHP_CONCEPTS;
+      case "HTML5":
+      default:
+        return tags;
+    }
+  })();
+
+  // Synchronize expandedTag when language changes to show the first entry by default
+  useEffect(() => {
+    if (activeLanguageTags && activeLanguageTags.length > 0) {
+      setExpandedTag(activeLanguageTags[0].name);
+    } else {
+      setExpandedTag(null);
+    }
+  }, [selectedLanguage, tags]);
   const [copiedText, setCopiedText] = useState<string | null>(null);
+  const [showConcreteExamples, setShowConcreteExamples] = useState(false);
+
+  useEffect(() => {
+    setShowConcreteExamples(false);
+  }, [expandedTag]);
+
   const [readTags, setReadTags] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem("html5_read_tags");
@@ -107,6 +143,75 @@ export default function App() {
       return [];
     }
   });
+
+  const currentLanguageReadCount = readTags.filter(tName => 
+    activeLanguageTags.some(alt => alt.name === tName)
+  ).length;
+
+  const dictionaryTitle = (() => {
+    switch (selectedLanguage) {
+      case "CSS":
+        return "Le dictionnaire ultime des propriétés CSS";
+      case "JavaScript":
+        return "Le guide de survie de la syntaxe JavaScript";
+      case "Python":
+        return "Le guide rapide des concepts fondamentaux Python";
+      case "PHP":
+        return "Les bases structurelles incontournables du langage PHP";
+      default:
+        return "Le dictionnaire ultime des balises sémantiques HTML5";
+    }
+  })();
+
+  const dictionaryDesc = (() => {
+    switch (selectedLanguage) {
+      case "CSS":
+        return (
+          <>
+            <strong>CSS</strong> régit l&#39;apparence, la mise en page et l&#39;animation de vos documents. Parcourez <strong>les propriétés indispensables</strong> de mise en page moderne (Flexbox, Grid), apprenez à éviter les pièges d&#39;affichage et intégrez proprement de parfaits styles certifiés modernes.
+          </>
+        );
+      case "JavaScript":
+        return (
+          <>
+            <strong>JavaScript</strong> insuffle de l&#39;interactivité côté client. Comprenez les variables de bloc, la programmation asynchrone (Promises, Async/Await), la manipulation du DOM, et évitez les pièges de portée de variable.
+          </>
+        );
+      case "Python":
+        return (
+          <>
+            <strong>Python</strong> se distingue par sa lisibilité sémantique et son extraordinaire clarté d&#39;écriture. Maîtrisez la syntaxe, les types de structures et fonctions indispensables pour coder proprement.
+          </>
+        );
+      case "PHP":
+        return (
+          <>
+            <strong>PHP</strong> propulse le web dynamique côté serveur. Découvrez comment structurer vos pages, echo vos données proprement au sein du balisage et intégrer des templates sécurisés.
+          </>
+        );
+      default:
+        return (
+          <>
+            HTML5 décrit le <strong>sens</strong> de vos contenus. Parcourez chaque élément officiel, comprenez son rôle d&#39;accessibilité (A11y/SEO), examinez les erreurs d&#39;usage et intégrez des fragments conformes au W3C directement dans vos projets.
+          </>
+        );
+    }
+  })();
+
+  const searchPlaceholder = (() => {
+    switch (selectedLanguage) {
+      case "CSS":
+        return "Rechercher une propriété CSS (ex: display, position, flex, margin, gap...)";
+      case "JavaScript":
+        return "Rechercher un concept JS (ex: const, function, Promise, fetch...)";
+      case "Python":
+        return "Rechercher une notion Python (ex: def, return, for...)";
+      case "PHP":
+        return "Rechercher une notion PHP (ex: echo, isset, array...)";
+      default:
+        return "Rechercher une balise html (ex: nav, main, article, figure...)";
+    }
+  })();
 
   const [favoriteTags, setFavoriteTags] = useState<string[]>(() => {
     try {
@@ -236,8 +341,21 @@ export default function App() {
   const [auditError, setAuditError] = useState<{ message: string; isConfig: boolean } | null>(null);
 
   // State for Game
+  const [gameLanguage, setGameLanguage] = useState<string>("HTML5");
   const [gameBlocks, setGameBlocks] = useState<GameBlock[]>([]);
   const [gameFeedback, setGameFeedback] = useState<{ isWon: boolean; percentage: number } | null>(null);
+
+  // Sync game language, practice index, and auditor code with selected language
+  useEffect(() => {
+    if (GAME_DATA_BY_LANG[selectedLanguage]) {
+      setGameLanguage(selectedLanguage);
+    }
+    setSelectedPracticeIndex(0);
+    const templates = AUDIT_TEMPLATES_BY_LANG[selectedLanguage] || AUDIT_TEMPLATES_BY_LANG.HTML5;
+    if (templates && templates.length > 0) {
+      setCodeToAudit(templates[0].code);
+    }
+  }, [selectedLanguage]);
 
   // Handle Clipboard Copy
   const handleCopy = (code: string, id: string) => {
@@ -247,7 +365,7 @@ export default function App() {
   };
 
   // Filter semantic tags
-  const filteredTags = tags.filter((tag) => {
+  const filteredTags = activeLanguageTags.filter((tag) => {
     const matchesSearch =
       tag.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       tag.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -260,8 +378,9 @@ export default function App() {
   });
 
   // Load / Restart Game
-  const initializeGame = () => {
-    const freshBlocks = INITIAL_GAME_BLOCKS.map((block) => ({
+  const initializeGame = (lang: string = gameLanguage) => {
+    const targetData = GAME_DATA_BY_LANG[lang] || GAME_DATA_BY_LANG["HTML5"];
+    const freshBlocks = targetData.blocks.map((block) => ({
       ...block,
       selectedTag: "",
       isCorrect: undefined
@@ -271,8 +390,8 @@ export default function App() {
   };
 
   useEffect(() => {
-    initializeGame();
-  }, []);
+    initializeGame(gameLanguage);
+  }, [gameLanguage]);
 
   // Set tag selection in game
   const handleGameTagSelect = (id: string, tag: string) => {
@@ -415,6 +534,7 @@ export default function App() {
                               setSelectedLanguage(lang);
                               setIsPageLangDropdownOpen(false);
                               playSound("success");
+                              setActiveTab("dictionary");
                             }}
                             className={`px-3 py-1.5 text-left text-[11px] font-bold transition-colors hover:bg-purple-50/80 dark:hover:bg-purple-950/40 w-full cursor-pointer flex items-center justify-between ${
                               selectedLanguage === lang 
@@ -428,7 +548,7 @@ export default function App() {
                                 lang === "CSS" ? "bg-blue-500" :
                                 lang === "JavaScript" ? "bg-yellow-500" :
                                 lang === "Python" ? "bg-cyan-500" :
-                                "bg-purple-500"
+                                "bg-purple-505"
                               }`} />
                               <span>{lang}</span>
                             </span>
@@ -457,7 +577,17 @@ export default function App() {
                 }`}
               >
                 <BookOpen className="w-4 h-4" />
-                <span>Dictionnaire A-Z</span>
+                <span>
+                  {selectedLanguage === "HTML5"
+                    ? "Dictionnaire A-Z"
+                    : selectedLanguage === "CSS"
+                    ? "Cours & Propriétés CSS"
+                    : selectedLanguage === "JavaScript"
+                    ? "Cours & Syntaxe JS"
+                    : selectedLanguage === "Python"
+                    ? "Cours & Syntaxe Python"
+                    : "Cours PHP"}
+                </span>
               </button>
               <button
                 id="nav-tab-practices"
@@ -487,10 +617,11 @@ export default function App() {
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-500"></span>
                 </span>
               </button>
+
               <button
                 id="nav-tab-game"
                 onClick={() => { setActiveTab("game"); initializeGame(); }}
-                className={`flex items-center gap-2 px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-all cursor-pointer ${
+                className={`flex items-center gap-1 px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-all cursor-pointer ${
                   activeTab === "game"
                     ? "bg-white dark:bg-slate-700 text-purple-700 dark:text-purple-400 shadow-xs ring-1 ring-black/5 dark:ring-white/10"
                     : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-700/50"
@@ -499,6 +630,7 @@ export default function App() {
                 <Award className="w-4 h-4 text-amber-500" />
                 <span>Jeu Quiz</span>
               </button>
+
               <button
                 id="nav-tab-challenges"
                 onClick={() => { setActiveTab("challenges"); }}
@@ -562,9 +694,19 @@ export default function App() {
           <div className="flex items-center gap-2">
             <span className="text-[10px] uppercase font-bold text-purple-600 dark:text-purple-400 tracking-wider">Académie Sémantique :</span>
             <div className="flex items-center gap-1.5 bg-purple-100/60 dark:bg-purple-950/40 px-2 py-0.5 rounded text-[11px] font-bold text-purple-850 dark:text-purple-300 border border-purple-200/40 dark:border-purple-900/40">
-              <span>{readTags.length + gameBlocks.filter(b => b.isCorrect === true).length}</span>
-              <span className="text-purple-400/50">/</span>
-              <span>{tags.length + gameBlocks.length}</span>
+              {selectedLanguage === "HTML5" ? (
+                <>
+                  <span>{readTags.length + gameBlocks.filter(b => b.isCorrect === true).length}</span>
+                  <span className="text-purple-400/50">/</span>
+                  <span>{tags.length + gameBlocks.length}</span>
+                </>
+              ) : (
+                <>
+                  <span>{currentLanguageReadCount}</span>
+                  <span className="text-purple-400/50">/</span>
+                  <span>{activeLanguageTags.length}</span>
+                </>
+              )}
               <span className="text-[10px] font-medium text-app-muted">validés</span>
             </div>
           </div>
@@ -574,12 +716,14 @@ export default function App() {
             <div className="flex-1 space-y-1">
               <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-wider text-app-muted">
                 <span className="flex items-center gap-1">📘 Encyclopédie</span>
-                <span className="font-mono text-purple-600 dark:text-purple-400">{tags.length > 0 ? Math.round((readTags.length / tags.length) * 100) : 0}%</span>
+                <span className="font-mono text-purple-600 dark:text-purple-405">
+                  {activeLanguageTags.length > 0 ? Math.round((currentLanguageReadCount / activeLanguageTags.length) * 100) : 0}%
+                </span>
               </div>
               <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-200/40 dark:border-slate-700/40">
                 <div
                   className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full transition-all duration-500 ease-out"
-                  style={{ width: `${tags.length > 0 ? (readTags.length / tags.length) * 100 : 0}%` }}
+                  style={{ width: `${activeLanguageTags.length > 0 ? (currentLanguageReadCount / activeLanguageTags.length) * 100 : 0}%` }}
                 />
               </div>
             </div>
@@ -630,10 +774,10 @@ export default function App() {
               <div className="relative z-10 max-w-2xl space-y-3">
                 <span className="px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-xs font-mono font-medium text-purple-200 border border-white/5">Encyclopédie Interactive</span>
                 <h2 className="text-xl sm:text-2xl font-black font-display tracking-tight text-white leading-tight">
-                  Le dictionnaire ultime des balises sémantiques HTML5
+                  {dictionaryTitle}
                 </h2>
                 <p className="text-gray-350 text-xs sm:text-sm leading-relaxed">
-                  HTML5 décrit le <strong>sens</strong> de vos contenus. Parcourez chaque élément officiel, comprenez son rôle d'accessibilité (A11y/SEO), examinez les erreurs d'usage et intégrez des fragments conformes au W3C directement dans vos projets.
+                  {dictionaryDesc}
                 </p>
               </div>
             </div>
@@ -644,7 +788,7 @@ export default function App() {
                 <input
                   id="search-tags"
                   type="text"
-                  placeholder="Rechercher une balise html (ex: nav, main, article, figure...)"
+                  placeholder={searchPlaceholder}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 rounded-lg border border-input-border focus:outline-none focus:ring-2 focus:ring-purple-400/50 focus:border-purple-500 bg-input-bg text-app-text text-xs sm:text-sm placeholder-gray-400 dark:placeholder-slate-500 font-medium"
@@ -678,37 +822,50 @@ export default function App() {
             </div>
 
             {/* IndexedDB Offline operations bar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-150 dark:border-slate-800 p-3.5 rounded-xl">
-              <div className="flex items-center gap-2 text-xs font-bold text-app-muted">
-                <Database className="w-4 h-4 text-purple-600 dark:text-purple-405 animate-pulse" />
-                <span>Synchronisation locale active (IndexDB hors-ligne)</span>
+            {selectedLanguage === "HTML5" ? (
+              <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-150 dark:border-slate-800 p-3.5 rounded-xl">
+                <div className="flex items-center gap-2 text-xs font-bold text-app-muted">
+                  <Database className="w-4 h-4 text-purple-600 dark:text-purple-405 animate-pulse" />
+                  <span>Synchronisation locale active (IndexDB hors-ligne)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsAddModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold transition-all shadow-2xs hover:shadow-xs cursor-pointer focus:outline-hidden"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Ajouter une balise</span>
+                  </button>
+                  <button
+                    onClick={handleResetTags}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-850 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-750 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer focus:outline-hidden"
+                    title="Restaurer le dictionnaire initial"
+                  >
+                    <History className="w-3.5 h-3.5 text-gray-500" />
+                    <span>Restaurer</span>
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setIsAddModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold transition-all shadow-2xs hover:shadow-xs cursor-pointer focus:outline-hidden"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Ajouter une balise</span>
-                </button>
-                <button
-                  onClick={handleResetTags}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-850 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-750 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer focus:outline-hidden"
-                  title="Restaurer le dictionnaire initial"
-                >
-                  <History className="w-3.5 h-3.5 text-gray-500" />
-                  <span>Restaurer</span>
-                </button>
+            ) : (
+              <div className="bg-purple-50/40 dark:bg-purple-950/10 border border-purple-205/40 dark:border-purple-900/10 p-3 rounded-xl flex items-center gap-2 text-[11px] font-bold text-purple-800 dark:text-purple-400">
+                <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-405 animate-pulse" />
+                <span>Académie Sémantique — Module de référence {selectedLanguage} (Lecture Seule)</span>
               </div>
-            </div>
+            )}
 
             {/* Dual Grid Layout */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
               
               {/* Left Column: list */}
-              <div className="lg:col-span-5 bg-card-bg rounded-xl border border-card-border shadow-2xs max-h-[500px] overflow-y-auto divide-y divide-gray-100 dark:divide-slate-700">
+              <div className="lg:col-span-5 bg-card-bg rounded-xl border border-card-border shadow-2xs max-h-[500px] overflow-y-auto overflow-x-hidden divide-y divide-gray-100 dark:divide-slate-700">
                 <div className="p-3 bg-panel-bg border-b border-panel-border sticky top-0 flex justify-between items-center z-10">
-                  <span className="text-xs font-bold text-app-muted uppercase">Balises correspondantes</span>
+                  <span className="text-xs font-bold text-app-muted uppercase">
+                    {selectedLanguage === "HTML5"
+                      ? "Balises correspondantes"
+                      : selectedLanguage === "CSS"
+                      ? "Propriétés correspondantes"
+                      : "Concepts correspondants"}
+                  </span>
                   <span className="bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 text-xs px-2 py-0.5 rounded-full font-mono font-bold">
                     {filteredTags.length}
                   </span>
@@ -717,7 +874,13 @@ export default function App() {
                 {filteredTags.length === 0 ? (
                   <div className="p-8 text-center space-y-2 text-gray-550">
                     <Info className="w-8 h-8 mx-auto text-gray-400" />
-                    <p className="font-semibold text-xs">Aucune balise trouvée</p>
+                    <p className="font-semibold text-xs">
+                      {selectedLanguage === "HTML5"
+                        ? "Aucune balise trouvée"
+                        : selectedLanguage === "CSS"
+                        ? "Aucune propriété trouvée"
+                        : "Aucun concept trouvé"}
+                    </p>
                   </div>
                 ) : (
                   filteredTags.map((tag) => {
@@ -734,7 +897,7 @@ export default function App() {
                             setExpandedTag(tag.name);
                           }
                         }}
-                        className={`w-full text-left p-3.5 hover:bg-dict-item-hover transition-colors flex justify-between items-center gap-3 cursor-pointer outline-none ${
+                        className={`w-full text-left p-3.5 hover:bg-dict-item-hover hover:translate-x-1.5 transition-all duration-200 flex justify-between items-center gap-3 cursor-pointer outline-none ${
                           expandedTag === tag.name ? "bg-purple-50/50 dark:bg-purple-950/20 border-r-3 border-purple-600 font-medium" : ""
                         }`}
                       >
@@ -790,7 +953,7 @@ export default function App() {
               {/* Right Column: Detailed tag interaction card */}
               <div className="lg:col-span-7">
                 {expandedTag ? (() => {
-                  const tag = tags.find((t) => t.name === expandedTag);
+                  const tag = activeLanguageTags.find((t) => t.name === expandedTag);
                   if (!tag) return null;
                   return (
                     <div className="bg-card-bg rounded-xl border border-card-border shadow-2xs overflow-hidden">
@@ -799,14 +962,18 @@ export default function App() {
                         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                           <div>
                             <span className="text-[10px] font-mono font-bold uppercase text-purple-700 dark:text-purple-400 tracking-wider">
-                              Rôle Sémantique Officiel
+                              {selectedLanguage === "HTML5" 
+                                ? "Rôle Sémantique Officiel" 
+                                : selectedLanguage === "CSS" 
+                                ? "Comportement Graphique Modern" 
+                                : "Spécification Syntaxique"}
                             </span>
                             
                             <div className="mt-2 flex flex-wrap items-baseline gap-2">
                               <code className="text-2xl font-black text-indigo-950 dark:text-indigo-200 font-mono">
                                 {tag.name}
                               </code>
-                              <span className="px-2 py-0.5 bg-white dark:bg-slate-755 text-[9px] font-mono text-gray-500 dark:text-slate-400 border border-gray-200 dark:border-slate-700 rounded uppercase font-bold">
+                              <span className="px-2 py-0.5 bg-white dark:bg-slate-755 text-[9px] font-mono text-gray-550 dark:text-slate-400 border border-gray-200 dark:border-slate-700 rounded uppercase font-bold">
                                 Catégorie: {tag.category}
                               </span>
                             </div>
@@ -831,24 +998,28 @@ export default function App() {
                               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer shadow-2xs ${
                                 readTags.includes(tag.name)
                                   ? "bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-600 font-bold"
-                                  : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700"
+                                  : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-705"
                               }`}
                             >
                               <CheckCircle2 className={`w-4 h-4 ${readTags.includes(tag.name) ? "text-white" : "text-slate-400"}`} />
                               <span>{readTags.includes(tag.name) ? "Appris ✔" : "Marquer comme appris"}</span>
                             </button>
 
-                            <button
-                              onClick={() => handleDeleteTag(tag.name)}
-                              title="Supprimer cette balise"
-                              className="p-1.5 rounded-lg border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/20 hover:bg-rose-100 dark:hover:bg-rose-900/30 text-rose-600 dark:text-rose-400 cursor-pointer shadow-2xs transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            {selectedLanguage === "HTML5" && (
+                              <button
+                                onClick={() => handleDeleteTag(tag.name)}
+                                title="Supprimer cette balise"
+                                className="p-1.5 rounded-lg border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/20 hover:bg-rose-100 dark:hover:bg-rose-900/30 text-rose-600 dark:text-rose-400 cursor-pointer shadow-2xs transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
                           </div>
                         </div>
+                      </div>
 
-                        <p className="mt-3 text-xs sm:text-sm text-app-muted leading-relaxed font-semibold">
+                      <div className="p-5 pb-1">
+                        <p className="text-xs sm:text-sm text-app-muted leading-relaxed font-semibold">
                           {tag.description}
                         </p>
                       </div>
@@ -876,6 +1047,62 @@ export default function App() {
                             {tag.donts}
                           </p>
                         </div>
+
+                        {/* Concrete Use Cases */}
+                        <div 
+                          onMouseEnter={() => setShowConcreteExamples(true)}
+                          onMouseLeave={() => setShowConcreteExamples(false)}
+                          className="bg-blue-50/45 dark:bg-blue-950/15 border border-blue-100 dark:border-blue-900/50 rounded-xl p-4 space-y-2 transition-all duration-200"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowConcreteExamples(!showConcreteExamples);
+                              playSound("ding");
+                            }}
+                            className="w-full flex items-center justify-between text-left group cursor-pointer focus:outline-none"
+                          >
+                            <span className="text-xs font-bold text-blue-800 dark:text-blue-300 uppercase tracking-wide flex items-center gap-1.5">
+                              <Lightbulb className="w-4 h-4 text-amber-500 animate-pulse" />
+                              <span>Cas d'utilisation concrets (1 à 2 exemples)</span>
+                            </span>
+                            <div className="flex items-center gap-1 text-[11px] font-bold text-blue-600 dark:text-blue-400">
+                              <span>{showConcreteExamples ? "Masquer" : "Afficher"}</span>
+                              <ArrowUpRight className={`w-4 h-4 transition-transform duration-300 ${
+                                showConcreteExamples ? "rotate-45 text-blue-600" : "rotate-0 text-blue-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                              }`} />
+                            </div>
+                          </button>
+
+                          <AnimatePresence initial={false}>
+                            {showConcreteExamples && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="overflow-hidden"
+                              >
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                                  {getConcreteUseCases(tag, selectedLanguage).map((useCase, index) => (
+                                    <div key={index} id={`usecase-box-${index}`} className="bg-white/80 dark:bg-slate-800/80 p-3 rounded-lg border border-blue-500/10 dark:border-slate-700/60 space-y-1">
+                                      <span className="text-[11px] font-bold text-blue-700 dark:text-blue-400 block font-sans">
+                                        📌 {useCase.title}
+                                      </span>
+                                      <p className="text-[11px] text-slate-700 dark:text-slate-300 leading-relaxed font-semibold">
+                                        {useCase.description}
+                                      </p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+
+                        {selectedLanguage === "CSS" && (
+                          <CssPlayground tag={tag} isDark={isDark} />
+                        )}
 
                         {/* Interactive Live Code Block */}
                         <div className="space-y-2">
@@ -1066,37 +1293,48 @@ export default function App() {
           >
             <div className="max-w-3xl space-y-1.5">
               <span className="text-[10px] uppercase font-bold tracking-wider text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-100">Chasse aux erreurs</span>
-              <h2 className="text-xl sm:text-2xl font-black font-display tracking-tight text-gray-900">
-                La chasse au "Div Soup" (Soupe de Divs)
+              <h2 className="text-xl sm:text-2xl font-black font-display tracking-tight text-gray-900 dark:text-white">
+                {selectedLanguage === "HTML5"
+                  ? "La chasse au \"Div Soup\" (Soupe de Divs)"
+                  : selectedLanguage === "CSS"
+                  ? "La chasse aux antipatterns CSS"
+                  : selectedLanguage === "JavaScript"
+                  ? "La chasse au code spaghetti JS"
+                  : selectedLanguage === "Python"
+                  ? "La chasse aux antipatterns Python"
+                  : "La chasse aux antipatterns PHP"}
               </h2>
-              <p className="text-gray-600 text-xs sm:text-sm leading-relaxed">
-                Visualisez des structures comparatives côte à côte. Comprenez pourquoi l'utilisation abusive de balises neutres comme <code className="font-mono bg-gray-150 px-1 py-0.5 text-gray-800 rounded">{"<div>"}</code> ou <code className="font-mono bg-gray-150 px-1 py-0.5 text-gray-800 rounded">{"<span>"}</code> exclut de nombreux utilisateurs et pénalise votre SEO.
+              <p className="text-gray-600 dark:text-slate-350 text-xs sm:text-sm leading-relaxed">
+                {selectedLanguage === "HTML5"
+                  ? "Visualisez des structures comparatives côte à côte. Comprenez pourquoi l'utilisation abusive de balises neutres comme <div> ou <span> exclut de nombreux utilisateurs et pénalise votre SEO."
+                  : "Visualisez des structures comparatives côte à côte. Comprenez comment éviter les mauvaises pratiques courantes pour écrire un code propre, performant, robuste et lisible."}
               </p>
             </div>
 
             {/* Error selector tabs */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
-              {COMMON_ERRORS.map((err, idx) => (
-                <button
-                  key={err.id}
-                  onClick={() => setSelectedPracticeIndex(idx)}
-                  className={`p-3 text-left rounded-xl border text-xs sm:text-sm transition-all cursor-pointer ${
-                    selectedPracticeIndex === idx
-                      ? "bg-rose-50/50 dark:bg-rose-950/20 border-rose-300 text-rose-950 dark:text-rose-200 font-bold"
-                      : "bg-card-bg border-card-border hover:bg-panel-bg text-app-text"
-                  }`}
-                >
-                  <span className="text-[9px] uppercase tracking-wider text-rose-600 dark:text-rose-455 block mb-1">Erreur de type {idx + 1}</span>
-                  <p className="line-clamp-1">{err.title}</p>
-                </button>
-              ))}
-            </div>
-
-            {/* Side by Side Comparative Workspace */}
             {(() => {
-              const currentErr = COMMON_ERRORS[selectedPracticeIndex];
+              const currentCommonErrors = COMMON_ERRORS_BY_LANG[selectedLanguage] || COMMON_ERRORS_BY_LANG.HTML5;
+              const currentErr = currentCommonErrors[selectedPracticeIndex] || currentCommonErrors[0];
               return (
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                    {currentCommonErrors.map((err, idx) => (
+                      <button
+                        key={err.id}
+                        onClick={() => setSelectedPracticeIndex(idx)}
+                        className={`p-3 text-left rounded-xl border text-xs sm:text-sm transition-all cursor-pointer ${
+                          selectedPracticeIndex === idx
+                            ? "bg-rose-50/50 dark:bg-rose-950/20 border-rose-300 text-rose-950 dark:text-rose-200 font-bold"
+                            : "bg-card-bg border-card-border hover:bg-panel-bg text-app-text"
+                        }`}
+                      >
+                        <span className="text-[9px] uppercase tracking-wider text-rose-600 dark:text-rose-405 block mb-1">Erreur de type {idx + 1}</span>
+                        <p className="line-clamp-1">{err.title}</p>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                   
                   {/* Fail Block */}
                   <div className="bg-card-bg rounded-xl border border-rose-250 dark:border-rose-900/60 overflow-hidden flex flex-col shadow-2xs">
@@ -1165,6 +1403,7 @@ export default function App() {
                   </div>
 
                 </div>
+              </>
               );
             })()}
           </motion.div>
@@ -1369,11 +1608,40 @@ export default function App() {
             <div className="max-w-3xl space-y-1.5">
               <span className="text-[10px] uppercase font-bold tracking-wider text-amber-700 bg-amber-50 dark:bg-amber-950/40 dark:text-amber-300 px-2.5 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">Atelier Formatif</span>
               <h2 className="text-xl sm:text-2xl font-black font-display tracking-tight text-app-text">
-                Associez les rôles au bon élément HTML5
+                {gameLanguage === "HTML5" ? "Associez les rôles au bon élément HTML5" :
+                 gameLanguage === "CSS" ? "Associez le comportement à la propriété CSS" :
+                 gameLanguage === "JavaScript" ? "Maîtrisez la syntaxe moderne JavaScript" :
+                 gameLanguage === "Python" ? "Maîtrisez la sémantique de programmation Python" :
+                 "Validez vos acquis sur les bases de PHP"}
               </h2>
               <p className="text-app-muted text-xs sm:text-sm leading-relaxed">
-                Testez vos automatismes de développeur de A à Z ! Complétez les 6 cas d'usages ci-dessous en sélectionnant l'élément sémantique HTML5 approprié dans la liste déroulante correspondante.
+                {gameLanguage === "HTML5" ? "Testez vos automatismes de développeur de A à Z ! Complétez les 6 cas d'usages ci-dessous en sélectionnant l'élément sémantique HTML5 approprié dans la liste déroulante correspondante." :
+                 gameLanguage === "CSS" ? "Testez votre maîtrise du positionnement et du design ! Choisissez la bonne propriété CSS pour chaque cas proposé." :
+                 gameLanguage === "JavaScript" ? "Associez la syntaxe ES6+ moderne au bon concept de programmation pour valider votre rigueur algorithmique." :
+                 gameLanguage === "Python" ? "Configurez les bonnes fonctions ou structures de données associées aux usages de haut niveau de Python." :
+                 "Prouvez la sécurité et l'organisation de vos connaissances sur le langage serveur PHP sémantique."}
               </p>
+            </div>
+
+            {/* Language Selector Sub-Tabs */}
+            <div className="flex flex-wrap gap-2 pb-1.5 border-b border-card-border">
+              {["HTML5", "CSS", "JavaScript", "Python", "PHP"].map((lang) => (
+                <button
+                  key={lang}
+                  onClick={() => {
+                    setGameLanguage(lang);
+                    initializeGame(lang);
+                    playSound("ding");
+                  }}
+                  className={`px-3.5 py-2 text-xs font-extrabold rounded-lg border transition-all cursor-pointer ${
+                    gameLanguage === lang
+                      ? "bg-purple-600 text-white border-purple-600 shadow-2xs"
+                      : "bg-card-bg border-card-border text-app-text hover:bg-dict-item-hover"
+                  }`}
+                >
+                  Quiz {lang}
+                </button>
+              ))}
             </div>
 
             <div className="bg-card-bg rounded-xl border border-card-border p-4 sm:p-5 shadow-2xs space-y-5">
@@ -1400,12 +1668,12 @@ export default function App() {
 
                     <div>
                       <select
-                        value={block.selectedTag}
+                        value={block.selectedTag || ""}
                         onChange={(e) => handleGameTagSelect(block.id, e.target.value)}
-                        className="w-full px-2.5 py-1.5 text-xs rounded border border-input-border focus:outline-none focus:ring-1 focus:ring-purple-400 bg-input-bg text-app-text font-mono"
+                        className="w-full px-2.5 py-1.5 text-xs rounded border border-input-border focus:outline-none focus:ring-1 focus:ring-purple-400 bg-input-bg text-app-text font-mono cursor-pointer"
                       >
-                        <option value="">-- Choisissez la balise --</option>
-                        {GAME_OPTIONS.map((opt) => (
+                        <option value="">-- Choisissez la bonne réponse --</option>
+                        {(GAME_DATA_BY_LANG[gameLanguage]?.options || []).map((opt) => (
                           <option key={opt} value={opt}>
                             {opt}
                           </option>
@@ -1419,7 +1687,7 @@ export default function App() {
               {/* Game verification button and score feedback */}
               <div className="pt-3 border-t border-card-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <button
-                  onClick={initializeGame}
+                  onClick={() => initializeGame(gameLanguage)}
                   className="px-4 py-2 rounded border border-input-border hover:bg-dict-item-hover text-app-text text-xs font-medium cursor-pointer"
                 >
                   Réinitialiser le Quiz
@@ -1429,7 +1697,7 @@ export default function App() {
                   {gameFeedback && (
                     <div className="text-xs font-semibold px-3 py-2 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-950 dark:text-purple-200 border border-purple-200 dark:border-purple-800">
                       Score obtenu : {gameFeedback.percentage}% (
-                      {gameFeedback.isWon ? "Excellent sémanticien !" : "Consultez le dictionnaire pour vous améliorer !"}
+                      {gameFeedback.isWon ? "Félicitations ! Maîtrise parfaite établie d'un bout à l'autre !" : "Découvrez les articles associés dans le dictionnaire pour vous bonifier !"}
                       )
                     </div>
                   )}
@@ -1458,7 +1726,7 @@ export default function App() {
             id="panel-challenges"
             className="space-y-6"
           >
-            <AdvancedChallenges />
+            <AdvancedChallenges language={selectedLanguage} />
           </motion.div>
         )}
 

@@ -130,6 +130,7 @@ export default function SemanticChatbot({ currentLanguage = "HTML5" }: { current
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState<number>(0);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const [attachedFile, setAttachedFile] = useState<{
     name: string;
@@ -586,18 +587,17 @@ Posez-moi votre question en toute simplicité en bas !`;
   };
 
   const clearChat = () => {
-    if (window.confirm("Voulez-vous réinitialiser la conversation historique ?")) {
-      const reset = [
-        {
-          id: "init",
-          role: "assistant",
-          content: initialBotMessage
-        }
-      ];
-      setMessages(reset);
-      localStorage.setItem("html5_semantic_chat_history", JSON.stringify(reset));
-      playSound("incorrect");
-    }
+    const reset = [
+      {
+        id: "init",
+        role: "assistant",
+        content: initialBotMessage
+      }
+    ];
+    setMessages(reset);
+    localStorage.setItem("html5_semantic_chat_history", JSON.stringify(reset));
+    playSound("incorrect");
+    setShowClearConfirm(false);
   };
 
   const handleSuggestionClick = (text: string) => {
@@ -639,13 +639,40 @@ Posez-moi votre question en toute simplicité en bas !`;
               </div>
               
               <div className="flex items-center gap-1.5 relative">
-                <button
-                  onClick={clearChat}
-                  title="Effacer l'historique de chat"
-                  className="p-1 rounded-md hover:bg-white/10 text-white/80 hover:text-white transition-colors cursor-pointer"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                {showClearConfirm ? (
+                  <div className="flex items-center gap-1 bg-white/20 px-1.5 py-0.5 rounded-lg border border-white/10 animate-fadeIn">
+                    <span className="text-[9px] font-black text-white/90 mr-0.5 select-none">Effacer ?</span>
+                    <button
+                      onClick={clearChat}
+                      title="Confirmer l'effacement"
+                      className="p-1 rounded bg-emerald-500 text-white hover:bg-emerald-600 transition-colors cursor-pointer flex items-center justify-center animate-pulse"
+                    >
+                      <Check className="w-2.5 h-2.5" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowClearConfirm(false);
+                        playSound("ding");
+                      }}
+                      title="Annuler"
+                      className="p-1 rounded bg-rose-500 text-white hover:bg-rose-600 transition-colors cursor-pointer flex items-center justify-center"
+                    >
+                      <X className="w-2.5 h-2.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setShowClearConfirm(true);
+                      playSound("ding");
+                    }}
+                    title="Effacer l'historique du chat"
+                    className="p-1 rounded-md hover:bg-white/10 text-white/80 hover:text-white transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+                
                 <button
                   onClick={() => { setIsOpen(false); playSound("ding"); }}
                   className="p-1 rounded-md hover:bg-white/10 text-white/80 hover:text-white transition-colors cursor-pointer"

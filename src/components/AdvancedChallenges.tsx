@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Sparkles,
@@ -44,17 +44,263 @@ interface TreeNode {
   id: string;
 }
 
-export default function AdvancedChallenges() {
-  const challenges: Challenge[] = [
-    {
-      id: "blog_post",
-      title: "La Une de Presse Sémantique",
-      difficulty: "Débutant",
-      difficultyColor: "text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/20",
-      description: "Structurez la une d'un grand journal en ligne. Vous devez fournir un en-tête de site intégrant un menu de navigation, suivi du corps de l'article principal daté et organisé sémantiquement.",
-      goal: "Évitez tout élément générique (div, span) et tirez parti de la hiérarchie sémantique HTML5 complète : header, nav, main, article et time.",
-      initialCode: "<!-- Écrivez votre structure sémantique ici ! -->\n<header>\n  <h1>Le Petit Sémantique</h1>\n  <!-- Ajoutez le menu de navigation ici -->\n</header>\n\n<main>\n  <!-- Créez l'article principal de la une ici -->\n</main>",
-      targetSkeleton: `<header>
+interface AdvancedChallengesProps {
+  language?: string;
+}
+
+export default function AdvancedChallenges({ language = "HTML5" }: AdvancedChallengesProps = {}) {
+  const challenges: Challenge[] = useMemo(() => {
+    if (language === "CSS") {
+      return [
+        {
+          id: "css_flex",
+          title: "Alignement Flexbox Moderne",
+          difficulty: "Débutant",
+          difficultyColor: "text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/20",
+          description: "Alignez trois conteneurs horizontalement en utilisant Flexbox avec un écart constant de 1rem et en centrant les éléments verticalement.",
+          goal: "Implémentez display: flex, la bonne propriété d'alignement et l'espacement intelligent.",
+          initialCode: "/* Évaluez votre talent d'intégrateur CSS */\n.container {\n  /* Activez flexbox ici */\n}\n\n.item {\n  /* Styles optionnels */\n}",
+          targetSkeleton: `.container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}`,
+          tagsUsed: ["display", "align-items", "gap"],
+          rules: [
+            {
+              id: "use_flex",
+              description: "Définit et active flexbox avec 'display: flex;'.",
+              check: (_, code) => /\bdisplay\s*:\s*flex\b/i.test(code)
+            },
+            {
+              id: "flex_align",
+              description: "Centre les enfants sur l'axe secondaire avec 'align-items: center;'.",
+              check: (_, code) => /\balign-items\s*:\s*center\b/i.test(code)
+            },
+            {
+              id: "use_gap",
+              description: "Utilise la propriété moderne 'gap' pour espacer les enfants (ex: 1rem ou 16px).",
+              check: (_, code) => /\bgap\s*:\s*(1rem|16px|1.5rem)\b/i.test(code)
+            }
+          ]
+        },
+        {
+          id: "css_vars",
+          title: "Themage avec CSS Variables",
+          difficulty: "Intermédiaire",
+          difficultyColor: "text-amber-600 dark:text-amber-400 border-amber-350 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20",
+          description: "Configurez des variables CSS globales sous la pseudo-classe :root pour les couleurs primaire et secondaire, puis appliquez-les sur une carte.",
+          goal: "Créer des variables et les consommer via la fonction var().",
+          initialCode: "/* Déclarez vos variables globales */\n:root {\n  /* Définissez --primary et --secondary */\n}\n\n.card {\n  /* Consommez vos variables ici */\n}",
+          targetSkeleton: `:root {
+  --primary: #...;
+  --secondary: #...;
+}
+.card {
+  background-color: var(--primary);
+}`,
+          tagsUsed: [":root", "--primary", "var"],
+          rules: [
+            {
+              id: "has_root",
+              description: "Déclare la pseudo-classe globale ':root'.",
+              check: (_, code) => /:root\b/i.test(code)
+            },
+            {
+              id: "has_custom_prop",
+              description: "Crée au moins une variable CSS commençant par '--'.",
+              check: (_, code) => /--[a-z0-9_-]+\s*:/i.test(code)
+            },
+            {
+              id: "uses_var",
+              description: "Consomme la variable déclarée via l'instruction 'var(...)'.",
+              check: (_, code) => /var\s*\(\s*--[a-z0-9_-]+\s*\)/i.test(code)
+            }
+          ]
+        }
+      ];
+    }
+
+    if (language === "JavaScript") {
+      return [
+        {
+          id: "js_mapping",
+          title: "Remplacement d'itérations par .map()",
+          difficulty: "Débutant",
+          difficultyColor: "text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/20",
+          description: "Transformez une liste de prix bruts en un nouveau tableau avec des prix doublés à l'aide de la méthode .map() et une fonction fléchée.",
+          goal: "Évitez les boucles traditionnelles for/while et adoptez la pureté fonctionnelle de ES6.",
+          initialCode: "const prices = [10, 20, 30, 40];\n// Doublez les prix avec .map() et une fonction fléchée\nconst doubledPrices = ",
+          targetSkeleton: `const doubledPrices = prices.map(price => price * 2);`,
+          tagsUsed: [".map", "=>"],
+          rules: [
+            {
+              id: "uses_map",
+              description: "Utilise la méthode de tableau moderne '.map(...)'.",
+              check: (_, code) => /\.map\s*\(/i.test(code)
+            },
+            {
+              id: "uses_arrow",
+              description: "Déploie une fonction fléchée ES6 '=>'.",
+              check: (_, code) => /=>/.test(code)
+            },
+            {
+              id: "no_for_loop",
+              description: "S'interdit d'utiliser une boucle 'for' ou 'while' classique.",
+              check: (_, code) => !/\b(for|while)\b/.test(code)
+            }
+          ]
+        },
+        {
+          id: "js_async",
+          title: "Sécurisation Asynchrone (Async/Await)",
+          difficulty: "Intermédiaire",
+          difficultyColor: "text-amber-600 dark:text-amber-400 border-amber-305 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20",
+          description: "Créez une fonction asynchrone 'fetchData' qui consomme une API externe via await, et incorporez une logique impérative try...catch pour éliminer les crashs réseau.",
+          goal: "Structurer un traitement asynchrone robuste sans callback hell.",
+          initialCode: "// Déclarez la fonction fetchData asynchrone\nfunction fetchData() {\n  // Utilisez try...catch et fetch avec await\n}",
+          targetSkeleton: `async function fetchData() {
+  try {
+    const res = await fetch(...);
+  } catch(err) { ... }
+}`,
+          tagsUsed: ["async", "await", "try", "catch"],
+          rules: [
+            {
+              id: "has_async",
+              description: "La fonction ou flèche est déclarée avec 'async'.",
+              check: (_, code) => /\basync\b/i.test(code)
+            },
+            {
+              id: "has_await",
+              description: "Consomme un appel via 'await'.",
+              check: (_, code) => /\bawait\b/i.test(code)
+            },
+            {
+              id: "has_try_catch",
+              description: "Surveille les anomalies réseau via un bloc 'try' et 'catch'.",
+              check: (_, code) => /\btry\b/i.test(code) && /\bcatch\b/i.test(code)
+            }
+          ]
+        }
+      ];
+    }
+
+    if (language === "Python") {
+      return [
+        {
+          id: "py_comprehension",
+          title: "Compréhension de Liste Expressive",
+          difficulty: "Débutant",
+          difficultyColor: "text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/20",
+          description: "Tirez parti d'une list comprehension pour filtrer et élever au carré tous les entiers pairs d'une liste.",
+          goal: "Créer une liste filtrée et transformée de manière concise.",
+          initialCode: "numbers = [1, 2, 3, 4, 5, 6]\n# Créez la liste squares_of_evens\nsquares_of_evens = ",
+          targetSkeleton: `squares_of_evens = [x**2 for x in numbers if x % 2 == 0]`,
+          tagsUsed: ["for", "in", "if"],
+          rules: [
+            {
+              id: "uses_bracket",
+              description: "Enveloppe la déclaration dans des crochets '[ ... ]' pour définir la liste.",
+              check: (_, code) => /\[.*for.*in.*\]/.test(code)
+            },
+            {
+              id: "has_modulo",
+              description: "Filtre les éléments pairs avec l'opérateur modulo '% 2 == 0'.",
+              check: (_, code) => /%\s*2\s*==\s*0/.test(code)
+            }
+          ]
+        },
+        {
+          id: "py_context",
+          title: "Context Manager 'with'",
+          difficulty: "Intermédiaire",
+          difficultyColor: "text-amber-600 dark:text-amber-400 border-amber-305 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20",
+          description: "Ouvrez de manière robuste le fichier 'data.txt' en mode lecture ('r') avec l'encodage utf-8, et affichez son contenu.",
+          goal: "Maîtriser la gestion de ressources à l'aide de 'with open(...)'.",
+          initialCode: "# Ouvrez le fichier de façon moderne et sécurisée\n",
+          targetSkeleton: `with open("data.txt", "r", encoding="utf-8") as f:
+    print(f.read())`,
+          tagsUsed: ["with open", "as"],
+          rules: [
+            {
+              id: "uses_with",
+              description: "Ouvre le fichier via l'instruction sémantique 'with open'.",
+              check: (_, code) => /\bwith\s+open\b/i.test(code)
+            },
+            {
+              id: "uses_as",
+              description: "Affectation du flux de fichier via le mot-clé 'as'.",
+              check: (_, code) => /\bas\s+[a-z0-9_-]+/i.test(code)
+            }
+          ]
+        }
+      ];
+    }
+
+    if (language === "PHP") {
+      return [
+        {
+          id: "php_xss",
+          title: "Désamorçage de Faille XSS",
+          difficulty: "Débutant",
+          difficultyColor: "text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/20",
+          description: "Sécurisez l'affichage de la variable $_GET['search'] de façon à désamorcer l'exécution de balises de script potentiellement insérées.",
+          goal: "Utiliser la fonction htmlspecialchars avant tout écho.",
+          initialCode: "<?php\n$query = $_GET['search'];\n// Affichez la variable de manière sécurisée\necho ",
+          targetSkeleton: `echo htmlspecialchars($query, ENT_QUOTES, 'UTF-8');`,
+          tagsUsed: ["htmlspecialchars"],
+          rules: [
+            {
+              id: "uses_htmlspecialchars",
+              description: "Filtre la sortie HTML avec 'htmlspecialchars(...)'.",
+              check: (_, code) => /\bhtmlspecialchars\s*\(/i.test(code)
+            }
+          ]
+        },
+        {
+          id: "php_pdo",
+          title: "PDO Requête Préparée",
+          difficulty: "Intermédiaire",
+          difficultyColor: "text-amber-600 dark:text-amber-400 border-amber-305 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20",
+          description: "Préparez une requête SQL sécurisée contre les injections de variables pour récupérer un utilisateur par son adresse email.",
+          goal: "Diviser de façon stricte la structure de la requête SQL et les variables transmises.",
+          initialCode: "<?php\n$email = $_POST['email'];\n// Préparez et exécutez la requête SQL avec PDO\n$stmt = $pdo->",
+          targetSkeleton: `$stmt = $pdo->prepare("SELECT * FROM users WHERE email = :email");
+$stmt->execute(['email' => $email]);`,
+          tagsUsed: ["prepare", "execute", "placeholder"],
+          rules: [
+            {
+              id: "uses_prepare",
+              description: "Prépare la requête SQL avec l'instruction '$pdo->prepare'.",
+              check: (_, code) => /->\s*prepare\b/i.test(code)
+            },
+            {
+              id: "uses_execute",
+              description: "Exécute la requête préparée en lui associant le tableau de variables via '$stmt->execute'.",
+              check: (_, code) => /->\s*execute\b/i.test(code)
+            },
+            {
+              id: "has_placeholder",
+              description: "La requête préparée SQL fait bien appel à un paramètre nommé (ex: :email).",
+              check: (_, code) => /:[a-z0-9_-]+/i.test(code)
+            }
+          ]
+        }
+      ];
+    }
+
+    // Default: HTML5
+    return [
+      {
+        id: "blog_post",
+        title: "La Une de Presse Sémantique",
+        difficulty: "Débutant",
+        difficultyColor: "text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/20",
+        description: "Structurez la une d'un grand journal en ligne. Vous devez fournir un en-tête de site intégrant un menu de navigation, suivi du corps de l'article principal daté et organisé sémantiquement.",
+        goal: "Évitez tout élément générique (div, span) et tirez parti de la hiérarchie sémantique HTML5 complète : header, nav, main, article et time.",
+        initialCode: "<!-- Écrivez votre structure sémantique ici ! -->\n<header>\n  <h1>Le Petit Sémantique</h1>\n  <!-- Ajoutez le menu de navigation ici -->\n</header>\n\n<main>\n  <!-- Créez l'article principal de la une ici -->\n</main>",
+        targetSkeleton: `<header>
   <nav>[Articles | À propos]</nav>
 </header>
 <main>
@@ -67,75 +313,75 @@ export default function AdvancedChallenges() {
     <footer>Mots-clés</footer>
   </article>
 </main>`,
-      tagsUsed: ["header", "nav", "main", "article", "time", "footer", "p"],
-      rules: [
-        {
-          id: "no_div_span",
-          description: "Aucun élément générique <div> ou <span> n'est toléré.",
-          check: (doc) => doc.querySelectorAll("div, span").length === 0
-        },
-        {
-          id: "has_header",
-          description: "Contient au moins une balise globale d'en-tête (<header>).",
-          check: (doc) => doc.querySelectorAll("header").length >= 1
-        },
-        {
-          id: "has_nav",
-          description: "Possède un bloc de navigation (<nav>) imbriqué dans l'en-tête.",
-          check: (doc) => {
-            const header = doc.querySelector("header");
-            return header ? header.querySelector("nav") !== null : false;
+        tagsUsed: ["header", "nav", "main", "article", "time", "footer", "p"],
+        rules: [
+          {
+            id: "no_div_span",
+            description: "Aucun élément générique <div> ou <span> n'est toléré.",
+            check: (doc) => doc.querySelectorAll("div, span").length === 0
+          },
+          {
+            id: "has_header",
+            description: "Contient au moins une balise globale d'en-tête (<header>).",
+            check: (doc) => doc.querySelectorAll("header").length >= 1
+          },
+          {
+            id: "has_nav",
+            description: "Possède un bloc de navigation (<nav>) imbriqué dans l'en-tête.",
+            check: (doc) => {
+              const header = doc.querySelector("header");
+              return header ? header.querySelector("nav") !== null : false;
+            }
+          },
+          {
+            id: "has_main",
+            description: "Contient la zone principale (<main>) de la page.",
+            check: (doc) => doc.querySelectorAll("main").length === 1
+          },
+          {
+            id: "has_article_inside_main",
+            description: "L'article principal (<article>) est situé dans la zone <main>.",
+            check: (doc) => {
+              const main = doc.querySelector("main");
+              return main ? main.querySelector("article") !== null : false;
+            }
+          },
+          {
+            id: "article_header_footer",
+            description: "L'article possède un <header> (titre/date) et un <footer> (mots-clés/liens).",
+            check: (doc) => {
+              const article = doc.querySelector("main article");
+              if (!article) return false;
+              return article.querySelector("header") !== null && article.querySelector("footer") !== null;
+            }
+          },
+          {
+            id: "has_time",
+            description: "Contient une balise de date précise (<time>) dans l'en-tête de l'article.",
+            check: (doc) => {
+              const articleHeader = doc.querySelector("main article header");
+              return articleHeader ? articleHeader.querySelector("time") !== null : false;
+            }
+          },
+          {
+            id: "has_p_tag",
+            description: "Le texte de l'article est enveloppé dans au moins un paragraphe sémantique (<p>).",
+            check: (doc) => {
+              const article = doc.querySelector("main article");
+              return article ? article.querySelectorAll("p").length >= 1 : false;
+            }
           }
-        },
-        {
-          id: "has_main",
-          description: "Contient la zone principale (<main>) de la page.",
-          check: (doc) => doc.querySelectorAll("main").length === 1
-        },
-        {
-          id: "has_article_inside_main",
-          description: "L'article principal (<article>) est situé dans la zone <main>.",
-          check: (doc) => {
-            const main = doc.querySelector("main");
-            return main ? main.querySelector("article") !== null : false;
-          }
-        },
-        {
-          id: "article_header_footer",
-          description: "L'article possède un <header> (titre/date) et un <footer> (mots-clés/liens).",
-          check: (doc) => {
-            const article = doc.querySelector("main article");
-            if (!article) return false;
-            return article.querySelector("header") !== null && article.querySelector("footer") !== null;
-          }
-        },
-        {
-          id: "has_time",
-          description: "Contient une balise de date précise (<time>) dans l'en-tête de l'article.",
-          check: (doc) => {
-            const articleHeader = doc.querySelector("main article header");
-            return articleHeader ? articleHeader.querySelector("time") !== null : false;
-          }
-        },
-        {
-          id: "has_p_tag",
-          description: "Le texte de l'article est enveloppé dans au moins un paragraphe sémantique (<p>).",
-          check: (doc) => {
-            const article = doc.querySelector("main article");
-            return article ? article.querySelectorAll("p").length >= 1 : false;
-          }
-        }
-      ]
-    },
-    {
-      id: "media_gallery",
-      title: "Galerie Photo d'Artistes",
-      difficulty: "Intermédiaire",
-      difficultyColor: "text-amber-600 dark:text-amber-400 border-amber-305 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20",
-      description: "Réalisez une vitrine interactive de photographies marines. Chaque image doit être légendée sémantiquement, les articles doivent posséder des panneaux d'informations d'artistes latéraux et des mentions de copyright.",
-      goal: "Représenter sémantiquement des photos et médias via <figure> et son <figcaption>, utiliser des sections thématiques et des appartes contextuelles.",
-      initialCode: "<!-- Débutez votre galerie sémantique -->\n<main>\n  <section>\n    <h2>Photographies de l'Océan</h2>\n    <!-- Insérez la figure de votre œuvre d'art ici -->\n  </section>\n  \n  <!-- Ajoutez des infos d'artiste complémentaires -->\n</main>",
-      targetSkeleton: `<main>
+        ]
+      },
+      {
+        id: "media_gallery",
+        title: "Galerie Photo d'Artistes",
+        difficulty: "Intermédiaire",
+        difficultyColor: "text-amber-600 dark:text-amber-400 border-amber-305 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20",
+        description: "Réalisez une vitrine interactive de photographies marines. Chaque image doit être légendée sémantiquement, les articles doivent posséder des panneaux d'informations d'artistes latéraux et des mentions de copyright.",
+        goal: "Représenter sémantiquement des photos et médias via <figure> et son <figcaption>, utiliser des sections thématiques et des appartes contextuelles.",
+        initialCode: "<!-- Débutez votre galerie sémantique -->\n<main>\n  <section>\n    <h2>Photographies de l'Océan</h2>\n    <!-- Insérez la figure de votre œuvre d'art ici -->\n  </section>\n  \n  <!-- Ajoutez des infos d'artiste complémentaires -->\n</main>",
+        targetSkeleton: `<main>
   <section>
     <figure>
       <img>
@@ -145,58 +391,58 @@ export default function AdvancedChallenges() {
   <aside>Biographie de l'artiste</aside>
   <footer>Copyright</footer>
 </main>`,
-      tagsUsed: ["main", "section", "figure", "figcaption", "img", "aside", "footer"],
-      rules: [
-        {
-          id: "no_div_span",
-          description: "Aucun élément générique <div> ou <span> n'est toléré.",
-          check: (doc) => doc.querySelectorAll("div, span").length === 0
-        },
-        {
-          id: "has_main",
-          description: "Le site possède une zone principale de contenu (<main>).",
-          check: (doc) => doc.querySelectorAll("main").length === 1
-        },
-        {
-          id: "has_section_inside_main",
-          description: "La galerie est structurée dans un groupement thématique (<section>).",
-          check: (doc) => {
-            const main = doc.querySelector("main");
-            return main ? main.querySelector("section") !== null : false;
+        tagsUsed: ["main", "section", "figure", "figcaption", "img", "aside", "footer"],
+        rules: [
+          {
+            id: "no_div_span",
+            description: "Aucun élément générique <div> ou <span> n'est toléré.",
+            check: (doc) => doc.querySelectorAll("div, span").length === 0
+          },
+          {
+            id: "has_main",
+            description: "Le site possède une zone principale de contenu (<main>).",
+            check: (doc) => doc.querySelectorAll("main").length === 1
+          },
+          {
+            id: "has_section_inside_main",
+            description: "La galerie est structurée dans un groupement thématique (<section>).",
+            check: (doc) => {
+              const main = doc.querySelector("main");
+              return main ? main.querySelector("section") !== null : false;
+            }
+          },
+          {
+            id: "has_figure_and_caption",
+            description: "L'image est enveloppée dans une <figure> contenant une légende sémantique (<figcaption>).",
+            check: (doc) => {
+              const fig = doc.querySelector("figure");
+              if (!fig) return false;
+              const img = fig.querySelector("img");
+              const caption = fig.querySelector("figcaption");
+              return img !== null && caption !== null;
+            }
+          },
+          {
+            id: "has_aside",
+            description: "Contient une apparté (<aside>) pour l'encart d'informations de l'auteur.",
+            check: (doc) => doc.querySelectorAll("aside").length >= 1
+          },
+          {
+            id: "has_footer",
+            description: "Contient un pied de page (<footer>) pour signaler la licence des images.",
+            check: (doc) => doc.querySelectorAll("footer").length >= 1
           }
-        },
-        {
-          id: "has_figure_and_caption",
-          description: "L'image est enveloppée dans une <figure> contenant une légende sémantique (<figcaption>).",
-          check: (doc) => {
-            const fig = doc.querySelector("figure");
-            if (!fig) return false;
-            const img = fig.querySelector("img");
-            const caption = fig.querySelector("figcaption");
-            return img !== null && caption !== null;
-          }
-        },
-        {
-          id: "has_aside",
-          description: "Contient une apparté (<aside>) pour l'encart d'informations de l'auteur.",
-          check: (doc) => doc.querySelectorAll("aside").length >= 1
-        },
-        {
-          id: "has_footer",
-          description: "Contient un pied de page (<footer>) pour signaler la licence des images.",
-          check: (doc) => doc.querySelectorAll("footer").length >= 1
-        }
-      ]
-    },
-    {
-      id: "app_dashboard",
-      title: "Tableau de Bord Applicatif",
-      difficulty: "Expert",
-      difficultyColor: "text-purple-600 dark:text-purple-400 border-purple-300 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/20",
-      description: "Codez la structure d'arrière-plan d'un panneau d'administration de projet. Il possède un menu d'applications, un espace de statistiques, un widget d'historique en temps réel et des alertes de sécurité.",
-      goal: "Combiner avec rigueur les rôles structurels afin de rendre le tableau de bord intelligible et accessible, sans la moindre boîte générique div.",
-      initialCode: "<!-- Architecture d'un dashboard de pointe -->\n<nav>\n  <!-- Liens de navigation du dashboard -->\n</nav>\n\n<main>\n  <!-- Section des indicateurs clés (stats) -->\n  \n  <!-- Zone d'activité en temps réel avec date -->\n</main>\n\n<!-- Sidebar contextuelle d'aide -->",
-      targetSkeleton: `<nav>Liens Dashboard</nav>
+        ]
+      },
+      {
+        id: "app_dashboard",
+        title: "Tableau de Bord Applicatif",
+        difficulty: "Expert",
+        difficultyColor: "text-purple-600 dark:text-purple-400 border-purple-300 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/20",
+        description: "Codez la structure d'arrière-plan d'un panneau d'administration de projet. Il possède un menu d'applications, un espace de statistiques, un widget d'historique en temps réel et des alertes de sécurité.",
+        goal: "Combiner avec rigueur les rôles structurels afin de rendre le tableau de bord intelligible et accessible, sans la moindre boîte générique div.",
+        initialCode: "<!-- Architecture d'un dashboard de pointe -->\n<nav>\n  <!-- Liens de navigation du dashboard -->\n</nav>\n\n<main>\n  <!-- Section des indicateurs clés (stats) -->\n  \n  <!-- Zone d'activité en temps réel avec date -->\n</main>\n\n<!-- Sidebar contextuelle d'aide -->",
+        targetSkeleton: `<nav>Liens Dashboard</nav>
 <main>
   <section><h3>Statistiques</h3></section>
   <article>
@@ -205,52 +451,70 @@ export default function AdvancedChallenges() {
   </article>
 </main>
 <aside>Chat & Assistance</aside>`,
-      tagsUsed: ["nav", "main", "section", "article", "time", "aside"],
-      rules: [
-        {
-          id: "no_div_span",
-          description: "Consigne d'or : aucune balise neutre <div> ou <span>.",
-          check: (doc) => doc.querySelectorAll("div, span").length === 0
-        },
-        {
-          id: "has_nav",
-          description: "Possède un module de navigation (<nav>) pour basculer d'onglet.",
-          check: (doc) => doc.querySelectorAll("nav").length >= 1
-        },
-        {
-          id: "has_main",
-          description: "Contient la zone centrale (<main>) de l'espace de travail.",
-          check: (doc) => doc.querySelectorAll("main").length === 1
-        },
-        {
-          id: "has_sections",
-          description: "Le <main> détient au moins une <section> thématique.",
-          check: (doc) => {
-            const main = doc.querySelector("main");
-            return main ? main.querySelectorAll("section").length >= 1 : false;
+        tagsUsed: ["nav", "main", "section", "article", "time", "aside"],
+        rules: [
+          {
+            id: "no_div_span",
+            description: "Consigne d'or : aucune balise neutre <div> ou <span>.",
+            check: (doc) => doc.querySelectorAll("div, span").length === 0
+          },
+          {
+            id: "has_nav",
+            description: "Possède un module de navigation (<nav>) pour basculer d'onglet.",
+            check: (doc) => doc.querySelectorAll("nav").length >= 1
+          },
+          {
+            id: "has_main",
+            description: "Contient la zone centrale (<main>) de l'espace de travail.",
+            check: (doc) => doc.querySelectorAll("main").length === 1
+          },
+          {
+            id: "has_sections",
+            description: "Le <main> détient au moins une <section> thématique.",
+            check: (doc) => {
+              const main = doc.querySelector("main");
+              return main ? main.querySelectorAll("section").length >= 1 : false;
+            }
+          },
+          {
+            id: "alerts_are_articles",
+            description: "Chaque notification système est formatée comme un bloc indépendant (<article>).",
+            check: (doc) => doc.querySelectorAll("article").length >= 1
+          },
+          {
+            id: "has_time",
+            description: "Contient un marqueur temporel (<time>) pour l'actualisation des données.",
+            check: (doc) => doc.querySelectorAll("time").length >= 1
+          },
+          {
+            id: "has_aside",
+            description: "Intègre un panneau flottant d'aide (<aside>) pour l'assistance.",
+            check: (doc) => doc.querySelectorAll("aside").length >= 1
           }
-        },
-        {
-          id: "alerts_are_articles",
-          description: "Chaque notification système est formatée comme un bloc indépendant (<article>).",
-          check: (doc) => doc.querySelectorAll("article").length >= 1
-        },
-        {
-          id: "has_time",
-          description: "Contient un marqueur temporel (<time>) pour l'actualisation des données.",
-          check: (doc) => doc.querySelectorAll("time").length >= 1
-        },
-        {
-          id: "has_aside",
-          description: "Intègre un panneau flottant d'aide (<aside>) pour l'assistance.",
-          check: (doc) => doc.querySelectorAll("aside").length >= 1
-        }
-      ]
-    }
-  ];
+        ]
+      }
+    ];
+  }, [language]);
 
   const [activeChallengeIndex, setActiveChallengeIndex] = useState(0);
-  const currentChallenge = challenges[activeChallengeIndex];
+
+  // Sync index on language change to prevent out of bounds
+  useEffect(() => {
+    setActiveChallengeIndex(0);
+  }, [language]);
+
+  const currentChallenge: Challenge = challenges[activeChallengeIndex] || challenges[0] || {
+    id: "",
+    title: "",
+    difficulty: "Débutant",
+    difficultyColor: "",
+    description: "",
+    goal: "",
+    initialCode: "",
+    targetSkeleton: "",
+    tagsUsed: [],
+    rules: []
+  };
   
   const [userCode, setUserCode] = useState(currentChallenge.initialCode);
   const [activeSubTab, setActiveSubTab] = useState<"checks" | "tree" | "preview">("checks");
@@ -268,12 +532,12 @@ export default function AdvancedChallenges() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [copied, setCopied] = useState(false);
 
-  // Initialize code when changing challenges
+  // Initialize code when changing challenges or language
   useEffect(() => {
     setUserCode(currentChallenge.initialCode);
     setHasSucceeded(false);
     setHasTriggeredSuccessAlert(false);
-  }, [activeChallengeIndex]);
+  }, [activeChallengeIndex, currentChallenge.id]);
 
   // Real-time parser validation
   useEffect(() => {
