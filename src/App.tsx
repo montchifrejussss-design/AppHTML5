@@ -28,13 +28,18 @@ import {
   Plus,
   Trash2,
   Database,
-  History
+  History,
+  Star,
+  Languages,
+  ChevronDown
 } from "lucide-react";
 import { SEMANTIC_TAGS, COMMON_ERRORS, INITIAL_AUDIT_TEMPLATES, INITIAL_GAME_BLOCKS, GAME_OPTIONS } from "./data";
 import { AuditResult, GameBlock, SemanticTag } from "./types";
 import developerLogo from "./assets/images/developer_logo_1780612371108.png";
 import { playSound, getMuted, setMuted } from "./utils/audio";
 import { getAllTags, saveTag, deleteTag, initDB } from "./utils/indexedDb";
+import AdvancedChallenges from "./components/AdvancedChallenges";
+import SemanticChatbot from "./components/SemanticChatbot";
 
 function DeveloperLogo({ className = "w-8 h-8" }: { className?: string }) {
   return (
@@ -48,7 +53,9 @@ function DeveloperLogo({ className = "w-8 h-8" }: { className?: string }) {
 }
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<"dictionary" | "practices" | "auditor" | "game" | "manifesto">("dictionary");
+  const [activeTab, setActiveTab] = useState<"dictionary" | "practices" | "auditor" | "game" | "challenges" | "manifesto">("dictionary");
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("HTML5");
+  const [isPageLangDropdownOpen, setIsPageLangDropdownOpen] = useState(false);
 
   const [isMuted, setIsMuted] = useState<boolean>(() => getMuted());
 
@@ -100,6 +107,28 @@ export default function App() {
       return [];
     }
   });
+
+  const [favoriteTags, setFavoriteTags] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem("html5_favorite_tags");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const toggleFavoriteTag = (tagName: string) => {
+    setFavoriteTags((prev) => {
+      const next = prev.includes(tagName)
+        ? prev.filter((t) => t !== tagName)
+        : [...prev, tagName];
+      try {
+        localStorage.setItem("html5_favorite_tags", JSON.stringify(next));
+      } catch (e) {}
+      playSound("ding");
+      return next;
+    });
+  };
 
   // Modal form states for Add Custom Tag
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -223,7 +252,10 @@ export default function App() {
       tag.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       tag.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       tag.usage.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || tag.category === selectedCategory;
+    const matchesCategory =
+      selectedCategory === "all" ||
+      (selectedCategory === "favorites" && favoriteTags.includes(tag.name)) ||
+      tag.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -331,7 +363,7 @@ export default function App() {
     <div id="app-root" className="min-h-screen flex flex-col bg-app-bg text-app-text transition-colors duration-200 selection:bg-purple-100 selection:text-purple-900 font-sans">
       
       {/* Header Banner */}
-      <header id="main-header" className="sticky top-0 z-40 bg-header-bg border-b border-header-border transition-colors duration-200 shadow-xs px-4 py-3.5 sm:px-6">
+      <header id="main-header" className="relative z-40 bg-header-bg border-b border-header-border transition-colors duration-200 shadow-xs px-4 py-3.5 sm:px-6">
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-xl text-white shadow-sm ring-4 ring-purple-100/50 dark:ring-purple-900/30">
@@ -339,15 +371,76 @@ export default function App() {
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[10px] uppercase tracking-wider font-bold font-mono px-2 py-0.5 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 rounded border border-purple-200 dark:border-purple-800/80 transition-colors">HTML5 Sémantique</span>
+                <span className="text-[10px] uppercase tracking-wider font-bold font-mono px-2 py-0.5 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 rounded border border-purple-200 dark:border-purple-800/80 transition-colors">{selectedLanguage} Sémantique</span>
                 <span className="text-[10px] uppercase tracking-wider font-bold font-mono px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 rounded border border-emerald-200 dark:border-emerald-800/80 transition-colors">W3C Guide</span>
                 <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-bold font-mono px-2 py-0.5 bg-slate-100 dark:bg-slate-800/60 text-app-text rounded border border-card-border transition-colors">
                   <span className="text-app-muted">Dev :</span>
                   <DeveloperLogo className="w-5 h-4" />
                   <span className="text-purple-600 dark:text-purple-400 font-extrabold whitespace-nowrap">Fré_Dév-Web Tech Lab</span>
                 </div>
+
+                {/* Inline Language Selector Dropdown */}
+                <div className="relative">
+                  <button
+                    id="page-lang-selector-btn"
+                    type="button"
+                    onClick={() => {
+                      setIsPageLangDropdownOpen(!isPageLangDropdownOpen);
+                      playSound("ding");
+                    }}
+                    className="flex items-center gap-1 px-2 py-0.5 bg-purple-100 hover:bg-purple-200/90 dark:bg-purple-950 text-purple-800 dark:text-purple-300 rounded border border-purple-300 dark:border-purple-800 transition-colors uppercase tracking-wider font-bold font-mono text-[10px] cursor-pointer shadow-xs"
+                    title="Choisir un autre langage de programmation"
+                  >
+                    <Languages className="w-3 h-3 text-purple-650 dark:text-purple-400" />
+                    <span className="ml-1">Langage : <span className="font-black text-purple-950 dark:text-purple-100 bg-purple-200/30 dark:bg-purple-900/60 px-1 py-0.2 rounded">{selectedLanguage}</span></span>
+                    <ChevronDown className={`ml-1 w-2.5 h-2.5 opacity-75 transition-transform duration-200 ${isPageLangDropdownOpen ? "rotate-180" : ""}`} />
+                  </button>
+
+                  <AnimatePresence>
+                    {isPageLangDropdownOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: 5 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: 5 }}
+                        className="absolute left-0 mt-1.5 w-44 bg-white dark:bg-slate-950 border border-gray-250 dark:border-slate-800 rounded-xl shadow-xl z-50 overflow-hidden text-gray-800 dark:text-slate-100 flex flex-col py-1"
+                      >
+                        <div className="px-3 py-1.5 text-[9px] uppercase tracking-wider font-extrabold text-gray-400 dark:text-slate-500 border-b border-gray-100 dark:border-slate-900 mb-1">
+                          Apprendre autre :
+                        </div>
+                        {["HTML5", "CSS", "JavaScript", "Python", "PHP"].map((lang) => (
+                          <button
+                            key={lang}
+                            type="button"
+                            onClick={() => {
+                              setSelectedLanguage(lang);
+                              setIsPageLangDropdownOpen(false);
+                              playSound("success");
+                            }}
+                            className={`px-3 py-1.5 text-left text-[11px] font-bold transition-colors hover:bg-purple-50/80 dark:hover:bg-purple-950/40 w-full cursor-pointer flex items-center justify-between ${
+                              selectedLanguage === lang 
+                                ? "text-purple-750 dark:text-purple-400 bg-purple-50/50 dark:bg-purple-950/20" 
+                                : ""
+                            }`}
+                          >
+                            <span className="flex items-center gap-1.5">
+                              <span className={`w-1.5 h-1.5 rounded-full ${
+                                lang === "HTML5" ? "bg-orange-500" :
+                                lang === "CSS" ? "bg-blue-500" :
+                                lang === "JavaScript" ? "bg-yellow-500" :
+                                lang === "Python" ? "bg-cyan-500" :
+                                "bg-purple-500"
+                              }`} />
+                              <span>{lang}</span>
+                            </span>
+                            {selectedLanguage === lang && <Check className="w-3 h-3 text-purple-600 dark:text-purple-400" />}
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
-              <h1 className="text-xl sm:text-2xl font-black font-display tracking-tight text-app-text transition-colors mt-0.5">Balisage Sémantique HTML5 de A à Z</h1>
+              <h1 className="text-xl sm:text-2xl font-black font-display tracking-tight text-app-text transition-colors mt-0.5">Balisage Sémantique {selectedLanguage} de A à Z</h1>
             </div>
           </div>
 
@@ -405,6 +498,18 @@ export default function App() {
               >
                 <Award className="w-4 h-4 text-amber-500" />
                 <span>Jeu Quiz</span>
+              </button>
+              <button
+                id="nav-tab-challenges"
+                onClick={() => { setActiveTab("challenges"); }}
+                className={`flex items-center gap-2 px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-lg transition-all cursor-pointer ${
+                  activeTab === "challenges"
+                    ? "bg-white dark:bg-slate-700 text-purple-700 dark:text-purple-400 shadow-xs ring-1 ring-black/5 dark:ring-white/10"
+                    : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-700/50"
+                }`}
+              >
+                <FileCode2 className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                <span>Défis Avancés</span>
               </button>
               <button
                 id="nav-tab-manifesto"
@@ -551,6 +656,7 @@ export default function App() {
                 <span className="text-xs font-semibold text-app-muted uppercase mr-1">Filtrer:</span>
                 {[
                   { value: "all", label: "Toutes" },
+                  { value: "favorites", label: "Favoris ★" },
                   { value: "structure", label: "Structure" },
                   { value: "content", label: "Contenu" },
                   { value: "interactive", label: "Interactives" },
@@ -617,14 +723,22 @@ export default function App() {
                   filteredTags.map((tag) => {
                     const isRead = readTags.includes(tag.name);
                     return (
-                      <button
+                      <div
                         key={tag.name}
                         onClick={() => setExpandedTag(tag.name)}
-                        className={`w-full text-left p-3.5 hover:bg-dict-item-hover transition-colors flex justify-between items-center gap-3 cursor-pointer ${
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            setExpandedTag(tag.name);
+                          }
+                        }}
+                        className={`w-full text-left p-3.5 hover:bg-dict-item-hover transition-colors flex justify-between items-center gap-3 cursor-pointer outline-none ${
                           expandedTag === tag.name ? "bg-purple-50/50 dark:bg-purple-950/20 border-r-3 border-purple-600 font-medium" : ""
                         }`}
                       >
-                        <div>
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <code className="text-xs sm:text-sm font-bold text-purple-800 dark:text-purple-300 font-mono bg-purple-50 dark:bg-purple-950/40 px-1.5 py-0.5 rounded flex items-center gap-1">
                               {isRead && <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />}
@@ -646,8 +760,28 @@ export default function App() {
                           </div>
                           <p className="text-xs text-gray-600 dark:text-slate-400 line-clamp-1 mt-1 font-normal">{tag.description}</p>
                         </div>
-                        <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                      </button>
+                        
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleFavoriteTag(tag.name);
+                            }}
+                            title={favoriteTags.includes(tag.name) ? "Retirer des favoris" : "Épingler dans les favoris"}
+                            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-850/50 text-amber-500 hover:scale-110 active:scale-95 transition-all cursor-pointer flex items-center justify-center"
+                          >
+                            <Star
+                              className={`w-4 h-4 ${
+                                favoriteTags.includes(tag.name)
+                                  ? "fill-amber-400 text-amber-500"
+                                  : "text-gray-350 dark:text-slate-600"
+                              }`}
+                            />
+                          </button>
+                          <ArrowRight className="w-4 h-4 text-gray-400" />
+                        </div>
+                      </div>
                     );
                   })
                 )}
@@ -679,6 +813,19 @@ export default function App() {
                           </div>
 
                           <div className="flex gap-2 self-start flex-wrap">
+                            <button
+                              onClick={() => toggleFavoriteTag(tag.name)}
+                              title={favoriteTags.includes(tag.name) ? "Retirer des favoris" : "Épingler dans les favoris"}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer shadow-2xs ${
+                                favoriteTags.includes(tag.name)
+                                  ? "bg-amber-500 hover:bg-amber-600 text-white border-amber-600 font-bold"
+                                  : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700"
+                              }`}
+                            >
+                              <Star className={`w-4 h-4 ${favoriteTags.includes(tag.name) ? "fill-white text-white font-bold" : "text-amber-500"}`} />
+                              <span>{favoriteTags.includes(tag.name) ? "Mise en favori ✔" : "Épingler"}</span>
+                            </button>
+
                             <button
                               onClick={() => toggleTagRead(tag.name)}
                               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer shadow-2xs ${
@@ -1300,6 +1447,21 @@ export default function App() {
           </motion.div>
         )}
 
+        {/* ==================== TAB: ADVANCED CHALLENGES ==================== */}
+        {activeTab === "challenges" && (
+          <motion.div
+            key="challenges"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            id="panel-challenges"
+            className="space-y-6"
+          >
+            <AdvancedChallenges />
+          </motion.div>
+        )}
+
         {/* ==================== TAB 5: WHY SEMENTIQUE IS VITAL ==================== */}
         {activeTab === "manifesto" && (
           <motion.div
@@ -1492,6 +1654,9 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      {/* Floating real-time AI semantic chatbot */}
+      <SemanticChatbot currentLanguage={selectedLanguage} />
 
     </div>
   );

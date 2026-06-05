@@ -135,6 +135,81 @@ Rédige toutes les explications complexes en français simple, précis et pédag
   }
 });
 
+// API endpoint for Gemini Semantic Chatbot assistant
+app.post("/api/chat", async (req, res) => {
+  try {
+    const { messages } = req.body;
+    if (!messages || !Array.isArray(messages)) {
+      res.status(400).json({ error: "Messages array is required" });
+      return;
+    }
+
+    let ai;
+    try {
+      ai = getGeminiClient();
+    } catch (err: any) {
+      res.status(500).json({
+        error: "Configuration requise",
+        message: "La clé d'API de Gemini de l'application n'est pas configurée dans les secrets.",
+        isConfigError: true
+      });
+      return;
+    }
+
+    // Clean and validate messages list for Gemini SDK
+    const rawMessages = messages || [];
+
+    // 1. Map to SDK format
+    let formatted = rawMessages.map((m: any) => ({
+      role: m.role === "assistant" ? "model" : "user",
+      parts: [{ text: m.content || "" }]
+    }));
+
+    // 2. Filter out any leading model messages before the first user message
+    const firstUserIndex = formatted.findIndex((m: any) => m.role === "user");
+    if (firstUserIndex !== -1) {
+      formatted = formatted.slice(firstUserIndex);
+    } else {
+      formatted = [];
+    }
+
+    // 3. Alternate strictly. If consecutive messages have the same role, merge their parts
+    const contents: any[] = [];
+    for (const msg of formatted) {
+      if (contents.length > 0 && contents[contents.length - 1].role === msg.role) {
+        contents[contents.length - 1].parts[0].text += "\n" + msg.parts[0].text;
+      } else {
+        contents.push(msg);
+      }
+    }
+
+    // 4. If empty or ends with a model message, handle gracefully or require user prompt
+    if (contents.length === 0) {
+      res.status(400).json({ error: "Aucun message utilisateur trouvé pour démarrer la discussion." });
+      return;
+    }
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.5-flash",
+      contents: contents,
+      config: {
+        systemInstruction: "Tu es 'Assistant Sémantique de Fré_Dév-Web Tech Lab', un chatbot IA flottant chaleureux, pédagogue et expert en développement web (HTML5 sémantique, CSS, JavaScript, Python, accessibilité WAI-ARIA, SEO technique). Ta mission est d'aider les développeurs et apprenants à mieux coder et concevoir leurs applications web.\n\nCONSIGNE STRICTE D'EXCLUSIVITÉ TECHNIQUE : Tu ne dois répondre à aucune question en dehors du développement web (telles que des recettes de cuisine, du sport, de la géographie, des ragots, de l'actualité générale, ou toute discussion hors sujet).\nSi l'utilisateur te pose une question hors du développement web, ou s'il te pose des questions de nature théologique/philosophique (ex: 'Est-ce que Dieu existe ?'), ou s'il te demande comment concevoir/créer un modèle d'IA général ou intégrer des moteurs d'IA externes complexes (ex: 'Comment créer une IA ?', 'Comment intégrer une ia à ma page ?'), tu dois impérativement refuser d'y répondre d'une manière polie mais ferme.\n\nPour tout refus de ce type lié à un sujet hors développement web ou théologies/IA, tu dois répondre EXACTEMENT et textuellement avec la phrase suivante :\n\"Je ne peux pas m'écarter de notre objectif de coaching axé sur le développement web pour aborder des sujets hors de ce domaine. Je vous suggère de nous reconcentrer sur notre apprentissage informatique afin de maximiser l'efficacité de notre formation. En quoi puis-je vous aider aujourd'hui ?\"\n\nRéponds toujours en français professionnel mais amical, de manière concise, vivante et illustrée par de courts exemples si nécessaire. Rappelle fièrement ton nom 'Assistant Sémantique de Fré_Dév-Web Tech Lab' si l'utilisateur te le demande ou te salue chaleureusement."
+      }
+    });
+
+    const reply = response.text || "Désolé, je n'ai pas pu générer de réponse.";
+    res.json({ reply });
+
+  } catch (error: any) {
+    console.error("Error in /api/chat:", error);
+    const isApiKeyMissing = !process.env.GEMINI_API_KEY;
+    const userFriendlyMessage = isApiKeyMissing
+      ? "Erreur lors de la communication avec l'IA. Assurez-vous d'avoir configuré la variable d'environnement GEMINI_API_KEY."
+      : `Erreur lors de la communication avec l'IA : ${error.message || "Erreur de génération"}`;
+    res.status(500).json({ error: userFriendlyMessage, details: error.message });
+  }
+});
+
 // Vite middleware flow for full stack App
 async function bootstrap() {
   if (process.env.NODE_ENV !== "production") {
