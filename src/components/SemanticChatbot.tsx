@@ -808,7 +808,7 @@ Posez-moi votre question en toute simplicité en bas !`;
                       <button
                         key={idx}
                         onClick={() => handleSuggestionClick(s.text)}
-                        className="text-[10px] font-bold py-1.5 px-2 rounded-xl text-left border bg-white dark:bg-slate-850 hover:bg-purple-50/40 dark:hover:bg-purple-950/10 border-gray-200 dark:border-slate-800 hover:border-purple-300 dark:hover:border-purple-900 text-gray-700 dark:text-slate-300 transition-colors shadow-3xs cursor-pointer truncate"
+                        className="text-[10px] font-bold py-1.5 px-2 rounded-xl text-left border bg-card-bg border-card-border hover:bg-purple-50/40 dark:hover:bg-purple-950/10 hover:border-purple-300 dark:hover:border-purple-900 text-gray-700 dark:text-slate-300 transition-all duration-200 hover:brightness-[1.07] cursor-pointer shadow-3xs truncate"
                       >
                         {s.label}
                       </button>
@@ -913,7 +913,7 @@ Posez-moi votre question en toute simplicité en bas !`;
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   title="Sélectionner un fichier de code, image ou vidéo"
-                  className="absolute left-1.5 top-1/2 -translate-y-1/2 p-2 rounded-lg text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-slate-100 dark:hover:bg-slate-850/80 cursor-pointer flex items-center justify-center transition-all active:scale-95"
+                  className="absolute left-1.5 top-1/2 -translate-y-1/2 p-2 rounded-lg text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-slate-100 dark:hover:bg-slate-800/80 cursor-pointer flex items-center justify-center transition-all active:scale-95"
                 >
                   <Plus className="w-4 h-4" />
                 </button>
@@ -934,7 +934,7 @@ Posez-moi votre question en toute simplicité en bas !`;
                   className={`absolute right-1.5 top-1/2 -translate-y-1/2 p-2 rounded-lg flex items-center justify-center transition-all cursor-pointer ${
                     isListening
                       ? "bg-rose-500 text-white animate-pulse shadow-md"
-                      : "text-gray-400 hover:text-purple-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-850/80"
+                      : "text-gray-400 hover:text-purple-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80"
                   }`}
                 >
                   {isListening ? (
@@ -951,7 +951,7 @@ Posez-moi votre question en toute simplicité en bas !`;
                 className={`p-2.5 rounded-xl text-white shadow-xs transition-transform active:scale-95 cursor-pointer flex items-center justify-center minim-w-[36px] ${
                   inputMessage.trim() || attachedFile
                     ? "bg-purple-700 hover:bg-purple-800 hover:scale-105"
-                    : "bg-gray-300 dark:bg-slate-850 text-gray-400 dark:text-slate-600 cursor-not-allowed"
+                    : "bg-gray-300 dark:bg-slate-800 text-gray-400 dark:text-slate-600 cursor-not-allowed"
                 }`}
               >
                 <Send className="w-4 h-4" />

@@ -838,7 +838,7 @@ export default function App() {
                   </button>
                   <button
                     onClick={handleResetTags}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-850 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-750 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer focus:outline-hidden"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-card-bg text-slate-700 dark:text-slate-300 border border-card-border hover:bg-slate-50 dark:hover:bg-slate-800/60 rounded-lg text-xs font-bold transition-all shadow-2xs hover:brightness-105 cursor-pointer focus:outline-hidden"
                     title="Restaurer le dictionnaire initial"
                   >
                     <History className="w-3.5 h-3.5 text-gray-500" />
@@ -932,7 +932,7 @@ export default function App() {
                               toggleFavoriteTag(tag.name);
                             }}
                             title={favoriteTags.includes(tag.name) ? "Retirer des favoris" : "Épingler dans les favoris"}
-                            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-850/50 text-amber-500 hover:scale-110 active:scale-95 transition-all cursor-pointer flex items-center justify-center"
+                            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/50 text-amber-500 hover:scale-110 active:scale-95 transition-all cursor-pointer flex items-center justify-center"
                           >
                             <Star
                               className={`w-4 h-4 ${
@@ -1335,16 +1335,19 @@ export default function App() {
                   </div>
 
                   <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                  
-                  {/* Fail Block */}
-                  <div className="bg-card-bg rounded-xl border border-rose-250 dark:border-rose-900/60 overflow-hidden flex flex-col shadow-2xs">
+                    {/* Fail Block */}
+                    <div className="bg-card-bg rounded-xl border border-rose-250 dark:border-rose-900/60 overflow-hidden flex flex-col shadow-2xs">
                     <div className="p-3 bg-rose-50/50 dark:bg-rose-950/35 border-b border-rose-100/60 dark:border-rose-900 flex items-center justify-between">
                       <span className="text-xs font-bold text-rose-850 dark:text-rose-300 uppercase tracking-wider flex items-center gap-1.5">
                         <XCircle className="w-4 h-4 text-rose-500" />
                         <span>Mauvaise pratique (À Éviter)</span>
                       </span>
                       <span className="text-[9px] font-mono bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 px-2 py-0.5 rounded font-bold uppercase">
-                        Sémantique absente
+                        {selectedLanguage === "HTML5" ? "Sémantique absente" :
+                         selectedLanguage === "CSS" ? "Syntaxe inefficace" :
+                         selectedLanguage === "JavaScript" ? "Impératif Spaghetti" :
+                         selectedLanguage === "Python" ? "Syntaxe Non-Idiomatique" :
+                         "Faille de sécurité"}
                       </span>
                     </div>
 
@@ -1356,7 +1359,11 @@ export default function App() {
 
                       <div className="relative rounded-lg overflow-hidden border border-rose-150 dark:border-rose-900/40 text-xs">
                         <div className="bg-rose-100/50 dark:bg-rose-900/45 text-red-800 dark:text-rose-300 font-mono px-3 py-1 font-bold">
-                          bad_code.html
+                          {selectedLanguage === "HTML5" ? "bad_code.html" :
+                           selectedLanguage === "CSS" ? "bad_code.css" :
+                           selectedLanguage === "JavaScript" ? "bad_code.js" :
+                           selectedLanguage === "Python" ? "bad_code.py" :
+                           "bad_code.php"}
                         </div>
                         <pre className="bg-slate-900 text-rose-105 p-3.5 overflow-x-auto font-mono text-xs leading-5">
                           <code>{currentErr.badCode}</code>
@@ -1368,24 +1375,44 @@ export default function App() {
                   {/* Success Block */}
                   <div className="bg-card-bg rounded-xl border border-emerald-250 dark:border-emerald-900/60 overflow-hidden flex flex-col shadow-2xs">
                     <div className="p-3 bg-emerald-50/50 dark:bg-emerald-950/35 border-b border-emerald-100/60 dark:border-emerald-900 flex items-center justify-between">
-                      <span className="text-xs font-bold text-emerald-850 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-emerald-850 dark:text-emerald-305 uppercase tracking-wider flex items-center gap-1.5">
                         <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                         <span>Bonne pratique (À Faire)</span>
                       </span>
                       <span className="text-[9px] font-mono bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded font-bold uppercase">
-                        Structure valide A11y & W3C
+                        {selectedLanguage === "HTML5" ? "Structure valide A11y & W3C" :
+                         selectedLanguage === "CSS" ? "CSS Moderne & Opti" :
+                         selectedLanguage === "JavaScript" ? "JS Fonctionnel" :
+                         selectedLanguage === "Python" ? "Philosophie Pythonic" :
+                         "Code Sécurisé PDO"}
                       </span>
                     </div>
 
                     <div className="p-4 flex-1 space-y-3">
                       <div>
-                        <h3 className="font-extrabold text-xs sm:text-sm text-emerald-950 dark:text-emerald-200">Correction Sémantique</h3>
-                        <p className="text-xs text-app-muted mt-1 leading-relaxed">Une structure limpide qui donne du sens directement lors de la compilation par le navigateur.</p>
+                        <h3 className="font-extrabold text-xs sm:text-sm text-emerald-950 dark:text-emerald-200">
+                          {selectedLanguage === "HTML5" ? "Correction Sémantique" :
+                           selectedLanguage === "CSS" ? "Correction CSS" :
+                           selectedLanguage === "JavaScript" ? "Correction JavaScript" :
+                           selectedLanguage === "Python" ? "Correction Pythonic" :
+                           "Correction Sécurité PHP"}
+                        </h3>
+                        <p className="text-xs text-app-muted mt-1 leading-relaxed">
+                          {selectedLanguage === "HTML5" ? "Une structure limpide qui donne du sens directement lors de la compilation par le navigateur." :
+                           selectedLanguage === "CSS" ? "Des propriétés optimisées et réutilisables, réduisant la redondance et s'assurant de l'adaptabilité." :
+                           selectedLanguage === "JavaScript" ? "Du code immutable modulaire utilisant des builtins optimisés limitant les effets de bord." :
+                           selectedLanguage === "Python" ? "Une syntaxe idiomatique compacte qui réduit les lignes de code tout en augmentant la lisibilité." :
+                           "Une structure blindée isolant le code SQL des variables utilisateur et assainissant les rendus."}
+                        </p>
                       </div>
 
                       <div className="relative rounded-lg overflow-hidden border border-emerald-150 dark:border-emerald-900/40 text-xs">
-                        <div className="bg-emerald-100/50 dark:bg-emerald-900/45 text-emerald-800 dark:text-emerald-300 font-mono px-3 py-1 font-bold">
-                          clean_semantic.html
+                        <div className="bg-emerald-100/50 dark:bg-emerald-900/45 text-emerald-805 dark:text-emerald-300 font-mono px-3 py-1 font-bold">
+                          {selectedLanguage === "HTML5" ? "clean_semantic.html" :
+                           selectedLanguage === "CSS" ? "clean_style.css" :
+                           selectedLanguage === "JavaScript" ? "clean_functional.js" :
+                           selectedLanguage === "Python" ? "clean_idiomatic.py" :
+                           "clean_secure.php"}
                         </div>
                         <pre className="bg-slate-900 text-emerald-100 p-3.5 overflow-x-auto font-mono text-xs leading-5">
                           <code>{currentErr.goodCode}</code>
@@ -1423,10 +1450,18 @@ export default function App() {
             <div className="max-w-3xl space-y-1.5">
               <span className="text-[10px] uppercase font-bold tracking-wider text-purple-700 bg-purple-50 dark:bg-purple-950/40 dark:text-purple-300 px-2.5 py-0.5 rounded-full border border-purple-200 dark:border-purple-800">Relecture Assistée IA</span>
               <h2 className="text-xl sm:text-2xl font-black font-display tracking-tight text-app-text">
-                Auditez et validez votre code HTML
+                Auditez et validez votre code {selectedLanguage === "HTML5" ? "HTML" : selectedLanguage}
               </h2>
               <p className="text-app-muted text-xs sm:text-sm leading-relaxed">
-                Notre module d'analyse sémantique propulsé par l'IA analyse votre balisage, détecte les structures d'accessibilité ("Soupe de Divs", absence de titres sémantiques ou de liens d'ancrage), et vous propose une note ainsi qu'un plan de correction.
+                {selectedLanguage === "HTML5"
+                  ? "Notre module d'analyse sémantique propulsé par l'IA analyse votre balisage, détecte les structures d'accessibilité (\"Soupe de Divs\", absence de titres sémantiques ou de liens d'ancrage), et vous propose une note ainsi qu'un plan de correction."
+                  : selectedLanguage === "CSS"
+                  ? "Notre module d'analyse propulsé par l'IA examine vos feuilles de style, détecte les sélecteurs inefficaces, la redondance de propriétés, l'oubli de variables ou de responsive fluide, et vous propose un plan complet d'optimisation."
+                  : selectedLanguage === "JavaScript"
+                  ? "Notre module d'analyse propulsé par l'IA examine votre code JS, détecte les structures impératives lourdes, les fuites de mémoire, l'asynchronisme non géré, et vous propose des alternatives fonctionnelles propres et sécurisées."
+                  : selectedLanguage === "Python"
+                  ? "Notre module d'analyse propulsé par l'IA passe au crible vos scripts Python, vérifie la conformité avec la norme PEP 8, détecte les structures non idiomatiques, et vous propose un code Pythonic optimisé."
+                  : "Notre module d'analyse propulsé par l'IA analyse vos scripts PHP, cible les failles critiques d'injection SQL ou de vulnérabilités XSS, et vous aide à fortifier votre code backend."}
               </p>
             </div>
 
@@ -1439,7 +1474,7 @@ export default function App() {
                 <div className="space-y-1.5">
                   <span className="text-[10px] font-bold text-app-muted uppercase tracking-wide block">Charger un modèle de test pour voir comment l'expert IA audite :</span>
                   <div className="flex flex-wrap gap-1.5">
-                    {INITIAL_AUDIT_TEMPLATES.map((item, index) => (
+                    {(AUDIT_TEMPLATES_BY_LANG[selectedLanguage] || AUDIT_TEMPLATES_BY_LANG.HTML5).map((item, index) => (
                       <button
                         key={index}
                         onClick={() => loadTemplate(item.code)}
@@ -1453,14 +1488,20 @@ export default function App() {
 
                 <div className="space-y-1">
                   <label id="editor-label" htmlFor="code-input" className="text-xs font-bold text-app-muted uppercase tracking-wider block">
-                    Éditeur HTML interactif
+                    Éditeur {selectedLanguage} interactif
                   </label>
                   <div className="relative rounded-lg overflow-hidden border border-input-border shadow-inner">
                     <textarea
                       id="code-input"
                       value={codeToAudit}
                       onChange={(e) => setCodeToAudit(e.target.value)}
-                      placeholder="Collez ici votre structure HTML à tester..."
+                      placeholder={
+                        selectedLanguage === "HTML5" ? "Collez ici votre structure HTML à tester..." :
+                        selectedLanguage === "CSS" ? "Collez ici votre feuille de style CSS à auditer..." :
+                        selectedLanguage === "JavaScript" ? "Collez ici votre code JavaScript à auditer..." :
+                        selectedLanguage === "Python" ? "Collez ici votre script Python à auditer..." :
+                        "Collez ici votre code PHP à auditer..."
+                      }
                       rows={12}
                       className="w-full bg-slate-900 text-[#E2E8F0] p-3.5 font-mono text-xs leading-5 focus:outline-none resize-none"
                     />
@@ -1470,7 +1511,13 @@ export default function App() {
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
                   <span className="text-[11px] text-app-muted flex items-center gap-1">
                     <Info className="w-3.5 h-3.5 text-purple-600 flex-shrink-0" />
-                    <span>L'IA vérifie le SEO, l'A11y, et les alternatives d'en-tête.</span>
+                    <span>
+                      {selectedLanguage === "HTML5" ? "L'IA vérifie le SEO, l'A11y, et les alternatives d'en-tête." :
+                       selectedLanguage === "CSS" ? "L'IA vérifie la redondance, le responsive et l'utilisation de variables." :
+                       selectedLanguage === "JavaScript" ? "L'IA vérifie la pureté, l'architecture et les patterns asynchrones." :
+                       selectedLanguage === "Python" ? "L'IA vérifie la conformité PEP 8 et la clarté idiomatique." :
+                       "L'IA traque les injections SQL, failles XSS et la rigueur du typage."}
+                    </span>
                   </span>
                   
                   <button
@@ -1491,7 +1538,7 @@ export default function App() {
                     ) : (
                       <>
                         <Sparkles className="w-4 h-4" />
-                        <span>Auditer mon code HTML</span>
+                        <span>Auditer mon code {selectedLanguage === "HTML5" ? "HTML" : selectedLanguage}</span>
                       </>
                     )}
                   </button>
@@ -1741,58 +1788,204 @@ export default function App() {
             id="panel-manifesto"
             className="space-y-6"
           >
-            <div className="max-w-3xl space-y-1.5">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-700 bg-indigo-50 dark:bg-indigo-950/40 dark:text-indigo-300 px-2.5 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-805">Avantages & Enjeux de A à Z</span>
-              <h2 className="text-xl sm:text-2xl font-black font-display tracking-tight text-app-text">
-                Pourquoi la sémantique HTML5 est-elle capitale ?
-              </h2>
-              <p className="text-app-muted text-xs sm:text-sm leading-relaxed">
-                Le code HTML5 ne s'adresse pas qu'au navigateur pour de l'habillage. C'est l'essence même de l'accessibilité universelle et de l'indexation de vos serveurs par les géants de la recherche.
-              </p>
-            </div>
+            {(() => {
+              const info = (() => {
+                switch (selectedLanguage) {
+                  case "CSS":
+                    return {
+                      tag: "Critères & Styles CSS",
+                      title: "Pourquoi la rigueur et l’organisation du CSS moderne sont-elles capitales ?",
+                      subtitle: "Le CSS moderne ne se limite pas à appliquer des couleurs au hasard. C’est la clé de voûte de la vitesse d'affichage, des interfaces fluides adaptées à tous les écrans, et du maintien d'un code pérenne.",
+                      p1: {
+                        num: "01",
+                        title: "1. Fluidité & Performance de Rendu",
+                        desc: "Un code CSS propre évite les calculs d'affichage lourds pour le GPU. L'utilisation correcte de Flexbox et CSS Grid avec des fonctions fluides comme clamp() évite les recalculs incessants de mise en page, évitant le décalage de contenu lors du chargement.",
+                        badge: "clamp()"
+                      },
+                      p2: {
+                        num: "02",
+                        title: "2. Standardisation via Propriétés Personnalisées",
+                        desc: "L'emploi systématique de variables CSS (var(--theme-accent)) favorise un Design System cohérent. Cela simplifie la création de thèmes dynamiques (sombre/clair) instantanés sans surpoids de fichiers et sans duplication inutile de sélecteurs.",
+                        badge: "var(--)"
+                      },
+                      p3: {
+                        num: "03",
+                        title: "3. Maintenance sans Régression",
+                        desc: "Fini le fléau de l'abus de !important et des sélecteurs sur-imbriqués ! Une architecture CSS moderne (en s'appuyant sur des sélecteurs plats) garantit qu'une retouche cosmétique mineure n'entraîne pas de régression inattendue sur le reste de votre application.",
+                        badge: "plat"
+                      }
+                    };
+                  case "JavaScript":
+                    return {
+                      tag: "Algorithmique & Paradigmes JS",
+                      title: "Pourquoi la rigueur et l’architecture JavaScript sont-elles capitales ?",
+                      subtitle: "JavaScript donne vie au Web mais un code désorganisé devient vite un cauchemar à maintenir. La clé réside dans les paradigmes modernes, l'optimisation mémoire, et la gestion fluide de l'asynchronisme.",
+                      p1: {
+                        num: "01",
+                        title: "1. Paradigmes Modernes & Expressivité",
+                        desc: "En éliminant les boucles impératives lourdes au profit de méthodes fonctionnelles immutables comme .map() et .filter(), le développeur écrit un flux de données propre, hautement lisible, auto-documenté, et beaucoup moins enclin aux bugs d'effets de bord.",
+                        badge: ".map()"
+                      },
+                      p2: {
+                        num: "02",
+                        title: "2. Maîtrise de l'Asynchronisme",
+                        desc: "Le traitement efficace des flux réseau complexes demande une utilisation impérative du pattern async/await combiné à des blocs de secours try/catch. Cela garantit une interface réactive qui ne se bloque jamais face aux latences du serveur.",
+                        badge: "async"
+                      },
+                      p3: {
+                        num: "03",
+                        title: "3. Résilience et Cycle de Vie",
+                        desc: "Évitez les fuites de mémoire fatales des Single Page Applications ! Éliminez les écouteurs d'événements persistants obsolètes et libérez les ressources non utilisées à chaque démontage de composant pour assurer des performances constantes.",
+                        badge: "event"
+                      }
+                    };
+                  case "Python":
+                    return {
+                      tag: "Écriture Idiomatique PEP 8",
+                      title: "Pourquoi l’écriture de code idiomatique Python est-elle capitale ?",
+                      subtitle: "Python est célèbre pour sa simplicité, mais écrire du code lisible selon les conventions PEP 8 et performant distingue le débutant de l'ingénieur chevronné.",
+                      p1: {
+                        num: "01",
+                        title: "1. Clarté Idiomatique & PEP 8",
+                        desc: "La philosophie zen du langage privilégie la lisibilité explicite du code. L'utilisation d'éléments idiomatiques comme les comprehensions permet de synthétiser des opérations lourdes en expressions fluides et élégantes sans dénaturer la clarté.",
+                        badge: "PEP 8"
+                      },
+                      p2: {
+                        num: "02",
+                        title: "2. Gestion Robuste des Ressources",
+                        desc: "La gestion sécurisée des entrées/sorties et des fichiers nécessite l'utilisation systématique de context managers via l'instruction with. Elle prévient les fuites de descripteurs système et assure un nettoyage automatique même en cas de crash.",
+                        badge: "with"
+                      },
+                      p3: {
+                        num: "03",
+                        title: "3. Robustesse & Exceptions",
+                        desc: "Un code robuste ne présume jamais du succès des opérations système. Des interceptions ciblées via des exceptions précises (except KeyError, except FileNotFoundError) évitent les arrêts prématurés des processus en production.",
+                        badge: "except"
+                      }
+                    };
+                  case "PHP":
+                    return {
+                      tag: "Rigueur & Sécurité Web Backend",
+                      title: "Pourquoi la sécurité et l’architecture PHP moderne sont-elles capitales ?",
+                      subtitle: "PHP fait tourner près de 80% du Web. Assurer la sécurité des applications, la rigueur du typage et l'étanchéité des flux SQL est indispensable pour repousser les attaques automatisées.",
+                      p1: {
+                        num: "01",
+                        title: "1. Parer les Injections SQL",
+                        desc: "Ne concaténez jamais vos variables dans vos requêtes ! L'utilisation obligatoire de requêtes préparées avec PDO isole la commande SQL des données de l'utilisateur, neutralisant de fait les tentatives d'injections SQL destructrices.",
+                        badge: "PDO"
+                      },
+                      p2: {
+                        num: "02",
+                        title: "2. Protection Face aux Failles XSS",
+                        desc: "Tout affichage dynamique d'une entrée utilisateur doit être assaini. L'utilisation systématique de fonctions protectrices comme htmlspecialchars() lors du rendu empêche l'injection furtive de scripts malveillants JavaScript dans le navigateur.",
+                        badge: "XSS"
+                      },
+                      p3: {
+                        num: "03",
+                        title: "3. Typer Rigoureusement ses API",
+                        desc: "L'instruction declare(strict_types=1) élève la sécurité de vos scripts. Elle oblige à l'exactitude des types de paramètres et de retours, réduisant ainsi considérablement les comportements erratiques ou imprévisibles.",
+                        badge: "types"
+                      }
+                    };
+                  default: // HTML5
+                    return {
+                      tag: "Avantages & Enjeux de A à Z",
+                      title: "Pourquoi la sémantique HTML5 est-elle capitale ?",
+                      subtitle: "Le code HTML5 ne s'adresse pas qu'au navigateur pour de l'habillage. C'est l'essence même de l'accessibilité universelle et de l'indexation de vos serveurs par les géants de la recherche.",
+                      p1: {
+                        num: "01",
+                        title: "1. Accessibilité Universelle (A11y)",
+                        desc: "Les personnes aveugles ou malvoyantes naviguent à l'aide de lecteurs d’écran vocaux. Grâce à des balises sémantiques claires (<nav>, <main>, <footer>), ils peuvent sauter directement d’une région à l'autre au clavier sans subir la lecture rébarbative.",
+                        badge: "<nav>"
+                      },
+                      p2: {
+                        num: "02",
+                        title: "2. Performance SEO & Crawlers",
+                        desc: "Les algorithmes d’indexation de Google parcourent continuellement le Web. Un site codé en sémantique s'exprime clairement : le robot sait exactement quel bloc représente l'intérêt véritable (<article>) des informations optionnelles (<aside>).",
+                        badge: "<aside>"
+                      },
+                      p3: {
+                        num: "03",
+                        title: "3. Maintenance et Performance",
+                        desc: "Une page web construite de façon sémantique utilise environ 30% d'éléments imbriqués en moins qu'un code souffrant de 'Div Soup'. Le poids des fichiers est plus léger, le code est plus lisible pour vos collaborateurs, et la maintenance est simplifiée.",
+                        badge: "soup"
+                      }
+                    };
+                }
+              })();
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              
-              {/* Pillar 1: Accessibilité */}
-              <div className="bg-card-bg rounded-xl border border-card-border p-5 space-y-3.5 shadow-2xs">
-                <div className="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-950/45 text-indigo-700 dark:text-indigo-300 flex items-center justify-center font-bold">
-                  01
+              return (
+                <div className="space-y-6 w-full">
+                  <div className="max-w-3xl space-y-1.5">
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-700 bg-indigo-50 dark:bg-indigo-950/40 dark:text-indigo-300 px-2.5 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-805">
+                      {info.tag}
+                    </span>
+                    <h2 className="text-xl sm:text-2xl font-black font-display tracking-tight text-app-text">
+                      {info.title}
+                    </h2>
+                    <p className="text-app-muted text-xs sm:text-sm leading-relaxed">
+                      {info.subtitle}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Pillar 1 */}
+                    <div className="bg-card-bg rounded-xl border border-card-border p-5 space-y-3.5 shadow-2xs">
+                      <div className="flex items-center justify-between">
+                        <div className="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-950/45 text-indigo-700 dark:text-indigo-300 flex items-center justify-center font-bold">
+                          {info.p1.num}
+                        </div>
+                        <span className="font-mono text-[9px] bg-indigo-50/50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 font-bold px-1.5 py-0.5 rounded border border-indigo-150/10">
+                          {info.p1.badge}
+                        </span>
+                      </div>
+                      <h3 className="font-extrabold text-sm sm:text-base text-app-text font-display">
+                        {info.p1.title}
+                      </h3>
+                      <p className="text-xs text-app-muted leading-relaxed font-semibold">
+                        {info.p1.desc}
+                      </p>
+                    </div>
+
+                    {/* Pillar 2 */}
+                    <div className="bg-card-bg rounded-xl border border-card-border p-5 space-y-3.5 shadow-2xs">
+                      <div className="flex items-center justify-between">
+                        <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-bold">
+                          {info.p2.num}
+                        </div>
+                        <span className="font-mono text-[9px] bg-emerald-50/50 dark:bg-emerald-100/10 text-emerald-600 dark:text-emerald-450 font-bold px-1.5 py-0.5 rounded border border-emerald-150/10">
+                          {info.p2.badge}
+                        </span>
+                      </div>
+                      <h3 className="font-extrabold text-sm sm:text-base text-app-text font-display">
+                        {info.p2.title}
+                      </h3>
+                      <p className="text-xs text-app-muted leading-relaxed font-semibold">
+                        {info.p2.desc}
+                      </p>
+                    </div>
+
+                    {/* Pillar 3 */}
+                    <div className="bg-card-bg rounded-xl border border-card-border p-5 space-y-3.5 shadow-2xs">
+                      <div className="flex items-center justify-between">
+                        <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-950/45 text-purple-700 dark:text-purple-300 flex items-center justify-center font-bold">
+                          {info.p3.num}
+                        </div>
+                        <span className="font-mono text-[9px] bg-purple-50/50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400 font-bold px-1.5 py-0.5 rounded border border-purple-150/10">
+                          {info.p3.badge}
+                        </span>
+                      </div>
+                      <h3 className="font-extrabold text-sm sm:text-base text-app-text font-display">
+                        {info.p3.title}
+                      </h3>
+                      <p className="text-xs text-app-muted leading-relaxed font-semibold">
+                        {info.p3.desc}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <h3 className="font-extrabold text-sm sm:text-base text-app-text font-display">
-                  1. Accessibilité Universelle (A11y)
-                </h3>
-                <p className="text-xs text-app-muted leading-relaxed font-medium">
-                  Les personnes aveugles ou malvoyantes naviguent à l'aide de lecteurs d’écran vocaux. Grâce à des balises sémantiques claires (<code className="font-mono bg-slate-100 dark:bg-slate-800 text-purple-700 dark:text-purple-300 font-bold px-1 rounded">{"<nav>"}</code>, <code className="font-mono bg-slate-100 dark:bg-slate-800 text-purple-700 dark:text-purple-300 font-bold px-1 rounded">{"<main>"}</code>, <code className="font-mono bg-slate-100 dark:bg-slate-800 text-purple-700 dark:text-purple-300 font-bold px-1 rounded">{"<footer>"}</code>), ils peuvent sauter directement d’une région à l'autre au clavier sans subir la lecture rébarbative des en-têtes répétés de chaque page.
-                </p>
-              </div>
-
-              {/* Pillar 2: SEO */}
-              <div className="bg-card-bg rounded-xl border border-card-border p-5 space-y-3.5 shadow-2xs">
-                <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-950/45 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-bold">
-                  02
-                </div>
-                <h3 className="font-extrabold text-sm sm:text-base text-app-text font-display">
-                  2. Performance SEO & Crawlers
-                </h3>
-                <p className="text-xs text-app-muted leading-relaxed font-medium">
-                  Les algorithmes d’indexation de Google parcourent continuellement le Web. Un site codé en sémantique s'exprime clairement : le robot sait exactement quel bloc représente l'intérêt véritable (<code className="font-mono bg-slate-100 dark:bg-slate-800 text-purple-700 dark:text-purple-300 font-bold px-1 rounded">{"<article>"}</code>) des informations optionnelles (<code className="font-mono bg-slate-100 dark:bg-slate-800 text-purple-700 dark:text-purple-300 font-bold px-1 rounded">{"<aside>"}</code>), garantissant un meilleur classement organique ("Rich Snippets").
-                </p>
-              </div>
-
-              {/* Pillar 3: Maintainability */}
-              <div className="bg-card-bg rounded-xl border border-card-border p-5 space-y-3.5 shadow-2xs">
-                <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-950/45 text-purple-700 dark:text-purple-300 flex items-center justify-center font-bold">
-                  03
-                </div>
-                <h3 className="font-extrabold text-sm sm:text-base text-app-text font-display">
-                  3. Maintenance et Performance
-                </h3>
-                <p className="text-xs text-app-muted leading-relaxed font-medium">
-                  Une page web construite de façon sémantique utilise environ 30% d'éléments imbriqués en moins qu'un code souffrant de "Div Soup". Le poids des fichiers est plus léger, le code est plus lisible pour vos collaborateurs, et la maintenance à long terme de vos feuilles de style s'avère infiniment simplifiée.
-                </p>
-              </div>
-
-            </div>
+              );
+            })()}
 
             {/* Developer Spotlight Banner */}
             <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-slate-800 text-white rounded-2xl p-6 sm:p-8 relative overflow-hidden shadow-md mt-6">

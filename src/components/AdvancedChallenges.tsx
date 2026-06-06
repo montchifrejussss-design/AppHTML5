@@ -501,6 +501,7 @@ $stmt->execute(['email' => $email]);`,
   // Sync index on language change to prevent out of bounds
   useEffect(() => {
     setActiveChallengeIndex(0);
+    setActiveSubTab("checks");
   }, [language]);
 
   const currentChallenge: Challenge = challenges[activeChallengeIndex] || challenges[0] || {
@@ -542,6 +543,28 @@ $stmt->execute(['email' => $email]);`,
   // Real-time parser validation
   useEffect(() => {
     if (typeof window === "undefined") return;
+
+    if (language !== "HTML5") {
+      setHasSyntaxError(false);
+      setSyntaxErrorMessage("");
+
+      const statuses = currentChallenge.rules.map(rule => {
+        try {
+          return {
+            id: rule.id,
+            passed: rule.check(null as any, userCode)
+          };
+        } catch {
+          return { id: rule.id, passed: false };
+        }
+      });
+
+      setRulesStatus(statuses);
+      const allPassed = statuses.every(s => s.passed);
+      setHasSucceeded(allPassed);
+      setParsedTree([]);
+      return;
+    }
 
     try {
       const parser = new DOMParser();
@@ -595,7 +618,7 @@ $stmt->execute(['email' => $email]);`,
     } catch (e: any) {
       console.error(e);
     }
-  }, [userCode, activeChallengeIndex]);
+  }, [userCode, activeChallengeIndex, language]);
 
   // Play sweet success audio only once per challenge accomplishment
   useEffect(() => {
@@ -622,9 +645,18 @@ $stmt->execute(['email' => $email]);`,
     const before = text.substring(0, start);
     const after = text.substring(end, text.length);
 
-    const openTag = `<${tag}>`;
-    const closeTag = `</${tag}>`;
-    const insertText = openTag + (start !== end ? text.substring(start, end) : "") + closeTag;
+    let insertText = "";
+    let cursorOffset = 0;
+
+    if (language === "HTML5" || !language) {
+      const openTag = `<${tag}>`;
+      const closeTag = `</${tag}>`;
+      insertText = openTag + (start !== end ? text.substring(start, end) : "") + closeTag;
+      cursorOffset = before.length + openTag.length;
+    } else {
+      insertText = tag;
+      cursorOffset = before.length + tag.length;
+    }
 
     const newCode = before + insertText + after;
     setUserCode(newCode);
@@ -632,7 +664,6 @@ $stmt->execute(['email' => $email]);`,
     // Reposition cursor
     setTimeout(() => {
       textarea.focus();
-      const cursorOffset = before.length + openTag.length;
       textarea.setSelectionRange(cursorOffset, cursorOffset);
     }, 50);
 
@@ -722,19 +753,37 @@ $stmt->execute(['email' => $email]);`,
     <div className="space-y-6">
       
       {/* Intro Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-slate-850 p-6 rounded-2xl border border-gray-150 dark:border-slate-800 shadow-2xs">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-card-bg p-6 rounded-2xl border border-card-border shadow-2xs">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <div className="p-2 rounded-xl bg-purple-100 dark:bg-purple-950/50">
               <Network className="w-5 h-5 text-purple-700 dark:text-purple-400" />
             </div>
             <h2 className="text-xl font-black text-gray-901 dark:text-white flex items-center gap-1.5">
-              <span>Défis Sémantiques Avancés</span>
+              <span>
+                {language === "HTML5"
+                  ? "Défis Sémantiques Avancés"
+                  : language === "CSS"
+                  ? "Défis d'Intégration & Styles CSS"
+                  : language === "JavaScript"
+                  ? "Défis Algorithmiques JavaScript"
+                  : language === "Python"
+                  ? "Défis d'Écriture Idiomatique Python"
+                  : "Défis de Rigueur & Sécurité PHP"}
+              </span>
               <span className="bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-250 text-[11px] px-2 py-0.5 rounded-full font-sans font-bold">PRO</span>
             </h2>
           </div>
           <p className="text-sm text-app-muted leading-relaxed max-w-2xl font-semibold">
-            Reconstruisez d'authentiques maquettes web conformes aux standards W3C. Vos structures HTML doivent utiliser <strong>uniquement des balises sémantiques</strong>, éliminant totalement les conteneurs neutres de type div.
+            {language === "HTML5"
+              ? "Reconstruisez d'authentiques maquettes web conformes aux standards W3C. Vos structures HTML doivent utiliser uniquement des balises sémantiques, éliminant totalement les conteneurs neutres de type div."
+              : language === "CSS"
+              ? "Maîtrisez les concepts de mise en page CSS moderne. Écrivez des styles fluides, utilisez des variables natives robustes, et structurez vos mises en page intelligemment."
+              : language === "JavaScript"
+              ? "Passez du code impératif lourd au code fonctionnel moderne. Évitez les pièges de synchronisation et d'asynchronisme, manipulez les tableaux avec élégance."
+              : language === "Python"
+              ? "Écrivez du code lisible, épuré et ultra-performant conforme aux normes PEP 8. Exploitez les list comprehensions et sécurisez vos accès aux fichiers."
+              : "Gardez vos scripts backend étanches face aux failles critiques. Apprenez à déjouer les injections SQL via PDO et les failles XSS grâce à de bons filtres de sortie."}
           </p>
         </div>
         <div className="flex items-center gap-2.5 bg-purple-50 dark:bg-purple-950/35 border border-purple-150 dark:border-purple-900 p-3 rounded-xl flex-shrink-0 w-full md:w-auto">
@@ -753,7 +802,7 @@ $stmt->execute(['email' => $email]);`,
         
         {/* Left column: Challenge List & Goal Details */}
         <div className="lg:col-span-4 space-y-4">
-          <div className="bg-white dark:bg-slate-850 rounded-2xl border border-gray-150 dark:border-slate-800 p-4 space-y-4">
+          <div className="bg-card-bg rounded-2xl border border-card-border p-4 space-y-4">
             <h3 className="text-xs font-bold uppercase tracking-wider text-app-muted flex items-center gap-1.5">
               <Bookmark className="w-4 h-4 text-purple-500" />
               <span>Choix du Scénario</span>
@@ -769,10 +818,10 @@ $stmt->execute(['email' => $email]);`,
                       setActiveChallengeIndex(idx);
                       playSound("ding");
                     }}
-                    className={`w-full text-left p-3.5 rounded-xl border transition-all flex justify-between items-center gap-3 cursor-pointer ${
+                    className={`w-full text-left p-3.5 rounded-xl border flex justify-between items-center gap-3 cursor-pointer transition-all duration-200 hover:brightness-105 hover:scale-[1.01] active:scale-98 ${
                       isActive
                         ? "bg-purple-50/60 dark:bg-purple-950/20 border-purple-500 ring-2 ring-purple-400/20 shadow-2xs"
-                        : "bg-white dark:bg-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800 border-gray-150 dark:border-slate-800"
+                        : "bg-card-bg border-card-border hover:bg-slate-50/50 dark:hover:bg-slate-800/40"
                     }`}
                   >
                     <div className="space-y-1.5 min-w-0">
@@ -799,56 +848,66 @@ $stmt->execute(['email' => $email]);`,
           </div>
 
           {/* Goal & Target Wireframe layout cardboard */}
-          <div className="bg-white dark:bg-slate-850 rounded-2xl border border-gray-150 dark:border-slate-800 p-5 space-y-4">
+          <div className="bg-card-bg rounded-2xl border border-card-border p-5 space-y-4">
             <div className="space-y-1">
               <span className="text-xs font-bold uppercase tracking-wider text-app-muted font-sans flex items-center gap-1.5">
                 <CheckSquare className="w-4 h-4 text-emerald-500" />
-                <span>Objectif de la mission</span>
+                <span>Objectif du Défi :</span>
               </span>
-              <p className="text-xs text-gray-750 dark:text-slate-300 leading-relaxed font-semibold">
+              <p className="text-xs sm:text-sm text-gray-700 dark:text-slate-300 font-semibold leading-relaxed pb-2">
                 {currentChallenge.description}
               </p>
             </div>
 
             <div className="bg-slate-50 dark:bg-slate-900 border border-slate-150 dark:border-slate-800/80 p-3 rounded-xl space-y-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-app-muted block">Gabarit Sémantique Cible :</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-app-muted block">
+                {language === "HTML5" ? "Gabarit Sémantique Cible :" : "Syntaxe Cible Attendue :"}
+              </span>
               <pre className="text-[11px] font-mono leading-tight text-purple-700 dark:text-purple-400 bg-purple-50/20 dark:bg-purple-950/10 p-2.5 rounded border border-purple-200/30 overflow-x-auto whitespace-pre-wrap">
                 {currentChallenge.targetSkeleton}
               </pre>
             </div>
 
             <div className="space-y-1.5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-app-muted block">Balises reines requises :</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-app-muted block">
+                {language === "HTML5" ? "Balises sémantiques requises :" : "Éléments obligatoires requis :"}
+              </span>
               <div className="flex flex-wrap gap-1.5">
                 {currentChallenge.tagsUsed.map((t) => (
                   <code 
                     key={t}
                     onClick={() => handleInjectTag(t)}
-                    title={`Cliquer pour insérer <${t}>`}
+                    title={language === "HTML5" ? `Cliquer pour insérer <${t}>` : `Cliquer pour insérer ${t}`}
                     className="text-[11px] font-mono text-purple-650 dark:text-purple-305 bg-purple-50 dark:bg-purple-950/40 border border-purple-150 dark:border-purple-900/40 px-2 py-1 rounded cursor-pointer hover:bg-purple-100/60 dark:hover:bg-purple-900 hover:scale-105 active:scale-95 transition-all shadow-2xs font-bold"
                   >
-                    &lt;{t}&gt;
+                    {language === "HTML5" ? `<${t}>` : t}
                   </code>
                 ))}
               </div>
-              <span className="text-[9px] text-gray-400 italic block">Astuce : Cliquez sur une balise ci-dessus pour l'insérer au curseur d'édition !</span>
+              <span className="text-[9px] text-gray-400 italic block">
+                {language === "HTML5"
+                  ? "Astuce : Cliquez sur une balise ci-dessus pour l'insérer au curseur d'édition !"
+                  : "Astuce : Cliquez sur un élément ci-dessus pour l'insérer au curseur d’édition !"}
+              </span>
             </div>
           </div>
         </div>
 
         {/* Center panel: HTML source editor */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="bg-white dark:bg-slate-850 rounded-2xl border border-gray-150 dark:border-slate-800 shadow-2xs overflow-hidden flex flex-col">
+          <div className="bg-card-bg rounded-2xl border border-card-border shadow-2xs overflow-hidden flex flex-col">
             <div className="bg-slate-50 dark:bg-slate-900/60 px-4 py-3 border-b border-gray-150 dark:border-slate-800 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Code2 className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                <span className="text-xs font-bold text-gray-901 dark:text-white">Éditeur Sémantique XML/HTML</span>
+                <span className="text-xs font-bold text-gray-901 dark:text-white">
+                  {language === "HTML5" ? "Éditeur Sémantique XML/HTML" : `Éditeur de Code ${language}`}
+                </span>
               </div>
               
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={handleCopyCode}
-                  className="p-1.5 rounded-lg border border-gray-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 text-gray-500 dark:text-slate-400 cursor-pointer shadow-3xs transition-colors flex items-center gap-1"
+                  className="p-1.5 rounded-lg border border-card-border hover:bg-slate-50/50 dark:hover:bg-slate-800/50 text-gray-500 dark:text-slate-400 cursor-pointer shadow-3xs transition-all duration-200 hover:brightness-105 flex items-center gap-1"
                   title="Copier le code"
                 >
                   {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
@@ -872,7 +931,13 @@ $stmt->execute(['email' => $email]);`,
                 ref={textareaRef}
                 value={userCode}
                 onChange={(e) => setUserCode(e.target.value)}
-                placeholder="<!-- Saisissez vos balises HTML sémantiques ici... -->"
+                placeholder={
+                  language === "HTML5" ? "<!-- Saisissez vos balises HTML sémantiques ici... -->" :
+                  language === "CSS" ? "/* Saisissez vos règles CSS ici... */" :
+                  language === "JavaScript" ? "// Saisissez votre code JavaScript ici..." :
+                  language === "Python" ? "# Saisissez votre script Pythonic ici..." :
+                  "// Saisissez votre code PHP ici..."
+                }
                 rows={11}
                 className="w-full p-4 font-mono text-xs sm:text-sm bg-slate-950 text-slate-100 focus:outline-none leading-relaxed border-0 focus:ring-2 focus:ring-purple-500 resize-y"
                 style={{ minHeight: "280px" }}
@@ -892,15 +957,27 @@ $stmt->execute(['email' => $email]);`,
                 <span>Calcul en direct</span>
               </div>
               <div className="flex flex-wrap gap-1">
-                {["header", "nav", "main", "article", "aside", "section", "figure", "figcaption", "footer", "time"].map(x => (
-                  <button
-                    key={x}
-                    onClick={() => handleInjectTag(x)}
-                    className="px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-[10px] font-mono text-gray-600 dark:text-slate-300 font-bold border border-gray-200 dark:border-slate-700 cursor-pointer"
-                  >
-                    +{x}
-                  </button>
-                ))}
+                {(() => {
+                  const helpers = language === "CSS"
+                    ? ["display: flex", "align-items", "justify-content", "gap", "var(--", "clamp(", "@media"]
+                    : language === "JavaScript"
+                    ? [".map(", "async ", "await ", "try {", "catch", "let ", "const "]
+                    : language === "Python"
+                    ? ["def ", "with open", "for ", "import ", "try:", "except:", "print("]
+                    : language === "PHP"
+                    ? ["<?php", "PDO::", "prepare(", "execute()", "password_hash", "htmlspecialchars", "declare(strict_types=1)"]
+                    : ["header", "nav", "main", "article", "aside", "section", "figure", "figcaption", "footer", "time"];
+
+                  return helpers.map(x => (
+                    <button
+                      key={x}
+                      onClick={() => handleInjectTag(x)}
+                      className="px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-[10px] font-mono text-gray-600 dark:text-slate-300 font-bold border border-gray-200 dark:border-slate-700 cursor-pointer"
+                    >
+                      +{x}
+                    </button>
+                  ));
+                })()}
               </div>
             </div>
           </div>
@@ -919,11 +996,17 @@ $stmt->execute(['email' => $email]);`,
                 </div>
                 <div className="space-y-1">
                   <h4 className="text-sm font-black text-emerald-800 dark:text-emerald-305 flex items-center gap-1.5">
-                    <span>Structure d'Or Réussie !</span>
+                    <span>
+                      {language === "HTML5" ? "Structure d'Or Réussie !" :
+                       language === "CSS" ? "Refactoring CSS Validé !" :
+                       language === "JavaScript" ? "Algorithme JavaScript Réussi !" :
+                       language === "Python" ? "Script Pythonic Validé !" :
+                       "Code PHP Sécurisé & Validé !"}
+                    </span>
                     <Sparkles className="w-4 h-4 text-emerald-600 animate-spin" />
                   </h4>
                   <p className="text-xs text-emerald-700 dark:text-emerald-400 font-semibold">
-                    Félicitations ! Vous avez validé tous les critères d'implantation pour '{currentChallenge.title}'. Aucun élément parasite n'a dégradé la sémantique.
+                    Félicitations ! Vous avez validé tous les critères d'implantation pour '{currentChallenge.title}'.
                   </p>
                 </div>
               </motion.div>
@@ -933,43 +1016,50 @@ $stmt->execute(['email' => $email]);`,
 
         {/* Right panel: Validation Checklists & Real-time Tree Visualizer / Preview */}
         <div className="lg:col-span-3 space-y-4">
-          <div className="bg-white dark:bg-slate-850 rounded-2xl border border-gray-150 dark:border-slate-800 shadow-2xs overflow-hidden">
+          <div className="bg-card-bg rounded-2xl border border-card-border shadow-2xs overflow-hidden">
             {/* Horizontal sub-tabs for checking and viewing */}
-            <div className="flex border-b border-gray-150 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-1">
-              <button
-                onClick={() => { setActiveSubTab("checks"); playSound("ding"); }}
-                className={`flex-1 py-2 text-center text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                  activeSubTab === "checks"
-                    ? "bg-white dark:bg-slate-850 text-purple-700 dark:text-purple-400 shadow-3xs"
-                    : "text-gray-500 dark:text-slate-400 hover:text-gray-900"
-                }`}
-              >
-                <CheckSquare className="w-3.5 h-3.5" />
-                <span>Critères ({rulesStatus.filter(r => r.passed).length}/{currentChallenge.rules.length})</span>
-              </button>
-              <button
-                onClick={() => { setActiveSubTab("tree"); playSound("ding"); }}
-                className={`flex-1 py-2 text-center text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                  activeSubTab === "tree"
-                    ? "bg-white dark:bg-slate-850 text-purple-700 dark:text-purple-400 shadow-3xs"
-                    : "text-gray-500 dark:text-slate-400 hover:text-gray-900"
-                }`}
-              >
-                <Network className="w-3.5 h-3.5" />
-                <span>Arbre DOM</span>
-              </button>
-              <button
-                onClick={() => { setActiveSubTab("preview"); playSound("ding"); }}
-                className={`flex-1 py-2 text-center text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                  activeSubTab === "preview"
-                    ? "bg-white dark:bg-slate-850 text-purple-700 dark:text-purple-400 shadow-3xs"
-                    : "text-gray-500 dark:text-slate-400 hover:text-gray-900"
-                }`}
-              >
-                <Eye className="w-3.5 h-3.5" />
-                <span>Aperçu</span>
-              </button>
-            </div>
+            {language === "HTML5" ? (
+              <div className="flex border-b border-card-border bg-slate-50 dark:bg-slate-900/50 p-1">
+                <button
+                  onClick={() => { setActiveSubTab("checks"); playSound("ding"); }}
+                  className={`flex-1 py-2 text-center text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    activeSubTab === "checks"
+                      ? "bg-card-bg text-purple-700 dark:text-purple-400 shadow-3xs border border-card-border hover:brightness-105"
+                      : "text-gray-500 dark:text-slate-400 hover:text-gray-900 hover:bg-slate-100/40 dark:hover:bg-slate-800/40"
+                  }`}
+                >
+                  <CheckSquare className="w-3.5 h-3.5" />
+                  <span>Critères ({rulesStatus.filter(r => r.passed).length}/{currentChallenge.rules.length})</span>
+                </button>
+                <button
+                  onClick={() => { setActiveSubTab("tree"); playSound("ding"); }}
+                  className={`flex-1 py-2 text-center text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    activeSubTab === "tree"
+                      ? "bg-card-bg text-purple-700 dark:text-purple-400 shadow-3xs border border-card-border hover:brightness-105"
+                      : "text-gray-500 dark:text-slate-400 hover:text-gray-900 hover:bg-slate-100/40 dark:hover:bg-slate-800/40"
+                  }`}
+                >
+                  <Network className="w-3.5 h-3.5" />
+                  <span>Arbre DOM</span>
+                </button>
+                <button
+                  onClick={() => { setActiveSubTab("preview"); playSound("ding"); }}
+                  className={`flex-1 py-2 text-center text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    activeSubTab === "preview"
+                      ? "bg-card-bg text-purple-700 dark:text-purple-400 shadow-3xs border border-card-border hover:brightness-105"
+                      : "text-gray-500 dark:text-slate-400 hover:text-gray-900 hover:bg-slate-100/40 dark:hover:bg-slate-800/40"
+                  }`}
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>Aperçu</span>
+                </button>
+              </div>
+            ) : (
+              <div className="border-b border-card-border bg-slate-50 dark:bg-slate-900/50 px-4 py-3 flex items-center gap-2">
+                <CheckSquare className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                <span className="text-xs font-bold text-gray-901 dark:text-white">Critères d'Évaluation de Rigueur ({rulesStatus.filter(r => r.passed).length}/{currentChallenge.rules.length})</span>
+              </div>
+            )}
 
             <div className="p-4" style={{ minHeight: "330px", maxHeight: "450px", overflowY: "auto" }}>
               
